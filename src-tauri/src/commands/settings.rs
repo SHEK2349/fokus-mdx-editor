@@ -14,7 +14,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             repository_path: String::new(),
-            articles_path: String::from("src/data/blog"),
+            articles_path: String::new(),
             is_configured: false,
         }
     }
