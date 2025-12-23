@@ -1,0 +1,1787 @@
+@import "tailwindcss";
+
+/* ========================================
+   Fokus. Design System
+   DESIGN_SPEC.md に準拠したスタイル定義
+   ======================================== */
+
+/* CSS変数定義 */
+:root {
+  /* ライトモード カラーパレット */
+  --background: #faf8f5;
+  --foreground: #3d3d3d;
+  --accent: #7b6d5d;
+  --muted: #ebe7e0;
+  --border: #ddd8d0;
+
+  /* フォント */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dark {
+  /* ダークモード カラーパレット */
+  --background: #1a1a1a;
+  --foreground: #e0dcd5;
+  --accent: #a89682;
+  --muted: #2d2d2d;
+  --border: #404040;
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.6;
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   Typography
+   ======================================== */
+
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}
+
+/* ========================================
+   Layout
+   ======================================== */
+
+.app-container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: 48px 1fr;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ========================================
+   Toolbar
+   ======================================== */
+
+.toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--muted);
+  -webkit-app-region: drag;
+}
+
+.toolbar h1 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.toolbar button {
+  -webkit-app-region: no-drag;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar button:hover {
+  background-color: var(--accent);
+  color: var(--background);
+  border-color: var(--accent);
+}
+
+.toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar button:disabled:hover {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+/* ========================================
+   Sidebar
+   ======================================== */
+
+.sidebar {
+  grid-column: 1;
+  width: 320px;
+  min-width: 320px;
+  background-color: var(--background);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar button {
+  background-color: var(--accent);
+  color: var(--background);
+  border: none;
+  font-family: inherit;
+}
+
+.sidebar button:hover {
+  opacity: 0.9;
+}
+
+/* ========================================
+   Main Content
+   ======================================== */
+
+.main-content {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--background);
+}
+
+.editor-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ========================================
+   Frontmatter Panel
+   ======================================== */
+
+.frontmatter-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--muted);
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.frontmatter-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.frontmatter-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.frontmatter-form .full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--foreground);
+  opacity: 0.7;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(123, 109, 93, 0.25);
+}
+
+.dark .form-group input:focus,
+.dark .form-group textarea:focus {
+  box-shadow: 0 0 0 2px rgba(201, 168, 124, 0.25);
+}
+
+/* ========================================
+   Monaco Editor Wrapper
+   ======================================== */
+
+.monaco-wrapper {
+  flex: 1;
+  overflow: hidden;
+  padding: 0 2rem;
+}
+
+/* ========================================
+   Article List
+   ======================================== */
+
+.article-list {
+  list-style: none;
+}
+
+.article-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.article-item:hover {
+  background-color: rgba(123, 109, 93, 0.1);
+}
+
+.dark .article-item:hover {
+  background-color: rgba(201, 168, 124, 0.1);
+}
+
+.article-item.selected {
+  background-color: var(--accent);
+  color: var(--background);
+}
+
+.article-item h3 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.article-item .meta {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.article-item .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+/* ========================================
+   Tags
+   ======================================== */
+
+.tag {
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  background-color: rgba(123, 109, 93, 0.15);
+  color: var(--accent);
+  font-size: 0.6875rem;
+  transition: all 0.2s ease;
+}
+
+.dark .tag {
+  background-color: rgba(201, 168, 124, 0.15);
+}
+
+.article-item.selected .tag {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--background);
+}
+
+/* ========================================
+   Git Status
+   ======================================== */
+
+.git-status {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+  font-size: 0.8125rem;
+}
+
+.git-status.changed {
+  color: #d4a54a;
+}
+
+.git-status.clean {
+  color: #6b9f78;
+}
+
+/* ========================================
+   Toggle Switch
+   ======================================== */
+
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background-color: var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle.active {
+  background-color: var(--accent);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--background);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.toggle.active::after {
+  transform: translateX(18px);
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.p-4 {
+  padding: 1rem;
+}
+
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.rounded {
+  border-radius: 4px;
+}
+
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.opacity-70 {
+  opacity: 0.7;
+}
+
+/* Accent button for inline use */
+.bg-accent {
+  background-color: var(--accent);
+}
+
+.text-white {
+  color: var(--background);
+}
+
+.border-b {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Text color utilities */
+.text-amber-500 {
+  color: #d4a54a;
+}
+
+.text-purple-500 {
+  color: #8b6d9c;
+}
+
+/* ========================================
+   Git Panel
+   ======================================== */
+
+.git-panel {
+  border-top: 1px solid var(--border);
+  background-color: var(--muted);
+}
+
+.git-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.git-panel-header:hover {
+  background-color: rgba(123, 109, 93, 0.1);
+}
+
+.dark .git-panel-header:hover {
+  background-color: rgba(201, 168, 124, 0.1);
+}
+
+.git-indicator {
+  font-size: 0.75rem;
+}
+
+.git-indicator.changed {
+  color: #d4a54a;
+}
+
+.git-indicator.clean {
+  color: #6b9f78;
+}
+
+.git-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+  background-color: var(--accent);
+  color: var(--background);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.git-panel-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem 1rem;
+  min-height: 200px;
+  max-height: 60vh;
+}
+
+.git-scrollable-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.git-sticky-footer {
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+}
+
+.git-section {
+  margin-bottom: 0.75rem;
+}
+
+.git-section-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-bottom: 0.375rem;
+}
+
+.git-file-list {
+  list-style: none;
+}
+
+.git-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.8125rem;
+}
+
+.git-file-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 2px;
+}
+
+.git-file.modified .git-file-icon {
+  background-color: rgba(212, 165, 74, 0.2);
+  color: #d4a54a;
+}
+
+.git-file.untracked .git-file-icon {
+  background-color: rgba(107, 159, 120, 0.2);
+  color: #6b9f78;
+}
+
+.git-file.staged .git-file-icon {
+  background-color: rgba(123, 109, 93, 0.2);
+  color: var(--accent);
+}
+
+.git-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-commit-form {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.git-commit-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: none;
+  margin-bottom: 0.5rem;
+}
+
+.git-commit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.git-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--accent);
+  color: var(--background);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--accent);
+  color: var(--background);
+  border-color: var(--accent);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.git-empty {
+  padding: 1rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* ========================================
+   Preview Panel
+   ======================================== */
+
+.preview-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--background);
+  border-left: 1px solid var(--border);
+}
+
+.preview-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--muted);
+}
+
+.preview-content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+
+/* Typography */
+.preview-h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.preview-h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.preview-content p {
+  margin-bottom: 1rem;
+}
+
+.preview-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.preview-link:hover {
+  opacity: 0.8;
+}
+
+/* Code */
+.preview-inline-code {
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+.preview-pre {
+  background-color: var(--muted);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.preview-code-block {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Blockquote */
+.preview-blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--foreground);
+  opacity: 0.85;
+  font-style: italic;
+}
+
+/* Lists */
+.preview-ul,
+.preview-ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.preview-ul {
+  list-style-type: disc;
+}
+
+.preview-ol {
+  list-style-type: decimal;
+}
+
+.preview-li {
+  margin-bottom: 0.375rem;
+}
+
+/* Table */
+.preview-table-wrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.preview-table th,
+.preview-table td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.preview-table th {
+  background-color: var(--muted);
+  font-weight: 600;
+}
+
+.preview-table tr:hover {
+  background-color: var(--muted);
+}
+
+/* Image */
+.preview-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+/* Editor + Preview Split Layout */
+.editor-preview-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding-top: 40px;
+  /* Space for collapsed metadata tab */
+}
+
+.editor-pane {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-pane {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Preview toggle button */
+.preview-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Editor Status Bar - Floating */
+.editor-status-bar {
+  position: absolute;
+  bottom: 1rem;
+  right: 3rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--foreground);
+  opacity: 0.5;
+  background-color: var(--muted);
+  border-radius: 0.25rem;
+  pointer-events: none;
+}
+
+/* ========================================
+   Animations - GPU Accelerated
+   transform / opacity only for performance
+   ======================================== */
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Apply animations */
+.article-item {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.article-item:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.article-item:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.article-item:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.article-item:nth-child(4) {
+  animation-delay: 90ms;
+}
+
+.article-item:nth-child(5) {
+  animation-delay: 120ms;
+}
+
+.article-item:nth-child(n+6) {
+  animation-delay: 150ms;
+}
+
+.editor-container {
+  animation: fadeInScale 0.25s ease-out;
+}
+
+.frontmatter-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.preview-panel {
+  animation: slideInLeft 0.25s ease-out;
+}
+
+.git-panel-content {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Enhanced button hover */
+.toolbar button {
+  transform: translateY(0);
+  transition: all 0.15s ease-out;
+}
+
+.toolbar button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Sidebar button enhanced hover */
+.sidebar button {
+  transform: scale(1);
+  transition: all 0.15s ease-out;
+}
+
+.sidebar button:hover {
+  transform: scale(1.02);
+}
+
+.sidebar button:active {
+  transform: scale(0.98);
+}
+
+/* Article item enhanced interaction */
+.article-item {
+  transform: translateX(0);
+  transition: all 0.15s ease-out;
+}
+
+.article-item:hover {
+  transform: translateX(4px);
+}
+
+.article-item.selected {
+  transform: translateX(0);
+}
+
+/* Tag hover effect */
+.tag {
+  transform: scale(1);
+  transition: all 0.12s ease-out;
+}
+
+.tag:hover {
+  transform: scale(1.05);
+}
+
+/* Toggle switch enhanced */
+.toggle {
+  transition: background-color 0.2s ease-out;
+}
+
+.toggle::after {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Git badge pulse on changes */
+.git-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Git file items stagger */
+.git-file {
+  animation: fadeIn 0.15s ease-out backwards;
+}
+
+.git-file:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.git-file:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.git-file:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.git-file:nth-child(n+4) {
+  animation-delay: 120ms;
+}
+
+/* Form input focus animation */
+.form-group input,
+.form-group textarea {
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, transform 0.15s ease-out;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  transform: scale(1.005);
+}
+
+/* Preview toggle button icon rotation hint */
+.preview-toggle {
+  transition: all 0.2s ease-out;
+}
+
+.preview-toggle:hover {
+  transform: scale(1.05);
+}
+
+/* Status bar fade in */
+.editor-status-bar {
+  animation: fadeIn 0.3s ease-out 0.2s backwards;
+}
+
+/* Smooth scrolling for all scrollable areas */
+.sidebar-content,
+.preview-content,
+.git-panel-content {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   UI Improvements - Batch Update
+   ======================================== */
+
+/* Sidebar header with close button */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
+}
+
+.new-article-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  background-color: var(--accent);
+  color: var(--background);
+  transition: all 0.15s ease;
+}
+
+.new-article-btn:hover {
+  opacity: 0.9;
+}
+
+.sidebar-close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  opacity: 0.5;
+  background-color: var(--muted);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  opacity: 1;
+  background-color: var(--border);
+}
+
+
+
+/* Main content full width when sidebar hidden */
+.main-content.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Frontmatter wrapper with animation */
+.frontmatter-wrapper {
+  overflow: hidden;
+  transition: all 0.3s ease-out;
+}
+
+.frontmatter-wrapper.closed {
+  max-height: 45px;
+}
+
+.frontmatter-wrapper.open {
+  max-height: 2000px;
+}
+
+.frontmatter-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.frontmatter-toggle:hover {
+  background-color: var(--border);
+}
+
+/* Adjusted form sizes */
+.frontmatter-panel .form-group input[type="text"]:not(.tag-input) {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+}
+
+.frontmatter-panel .form-group textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* Compact form layout */
+.frontmatter-panel {
+  padding: 0.75rem 1rem;
+}
+
+.frontmatter-panel .form-group {
+  margin-bottom: 0.5rem;
+}
+
+.frontmatter-panel .form-group label {
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Window controls auto-hide */
+.toolbar {
+  -webkit-app-region: drag;
+}
+
+.toolbar button,
+.toolbar .git-status,
+.toolbar .preview-toggle {
+  -webkit-app-region: no-drag;
+}
+
+/* Hamburger menu button in toolbar */
+.hamburger-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0 !important;
+  font-size: 1.25rem;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.hamburger-btn:hover {
+  opacity: 1;
+  background-color: var(--muted) !important;
+}
+
+/* Git panel full width fix */
+.git-panel {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.git-panel-header {
+  width: 100%;
+}
+
+/* Frontmatter panel collapsed state */
+.frontmatter-panel.collapsed {
+  padding: 0;
+  box-shadow: none;
+}
+
+/* Frontmatter panel expanded state */
+.frontmatter-panel.expanded {
+  padding: 0;
+}
+
+.frontmatter-panel.collapsed .frontmatter-header,
+.frontmatter-panel.expanded .frontmatter-header {
+  padding: 0.5rem 1rem;
+}
+
+.frontmatter-panel.expanded .frontmatter-form {
+  padding: 0 1rem 1rem 1rem;
+}
+
+.frontmatter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* Hide scrollbars in sidebar while keeping scroll functionality */
+.sidebar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
+  /* Chrome/Safari/Opera */
+}
+
+.sidebar-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========================================
+   Modal Styles
+   ======================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-content {
+  background-color: var(--background);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInScale 0.2s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 0.25rem 0.5rem;
+  transition: opacity 0.15s ease;
+}
+
+.modal-close:hover {
+  opacity: 1;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.modal-footer button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-footer button.primary {
+  background-color: var(--accent);
+  color: var(--background);
+  border: none;
+}
+
+.modal-footer button.primary:hover {
+  opacity: 0.9;
+}
+
+.modal-footer button:not(.primary) {
+  background-color: transparent;
+  border: 1px solid var(--border);
+}
+
+/* Settings Modal specific */
+.settings-modal .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.settings-modal .form-hint {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.input-with-button {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.input-with-button button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.input-with-button button:hover {
+  background-color: var(--border);
+}
+
+.error-message {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.dark .error-message {
+  background-color: rgba(185, 28, 28, 0.2);
+  color: #fca5a5;
+}
+
+/* Repository name in toolbar */
+.repo-name {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin-left: 0.5rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Settings button in toolbar */
+.settings-btn {
+  padding: 0.25rem 0.5rem !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+  margin-left: auto;
+}
+
+.settings-btn:hover {
+  opacity: 1;
+}
+
+/* Icon buttons in toolbar (hamburger, settings, preview, theme) */
+.icon-btn {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 3rem;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+  opacity: 1;
+  background-color: var(--muted) !important;
+}
+
+/* App icon in toolbar */
+.app-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin-right: 0.25rem;
+}
+
+/* Tutorial Overlay & Tooltip */
+.tutorial-card {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  color: var(--foreground);
+  animation: fadeIn 0.3s ease-out;
+  min-width: 300px;
+}
+
+.tutorial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tutorial-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.step-counter {
+  font-size: 0.875rem;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.tutorial-body {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.tutorial-body ul {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.tutorial-body li {
+  margin-bottom: 0.25rem;
+}
+
+.tutorial-footer {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.tutorial-footer button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tutorial-footer button.primary {
+  background-color: var(--accent);
+  color: var(--background);
+  border: none;
+  font-weight: 500;
+}
+
+.tutorial-footer button.primary:hover {
+  filter: brightness(1.1);
+}
+
+.tutorial-footer button.secondary {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.tutorial-footer button.secondary:hover {
+  background-color: var(--muted);
+}
+
+/* Settings Page Styles */
+.settings-divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+.settings-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--accent);
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--muted);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.shortcut-desc {
+  color: var(--foreground);
+}
+
+.shortcut-key {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  min-width: 2rem;
+  text-align: center;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* Welcome Screen */
+.welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--background) 0%, #1a1614 100%);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.welcome-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-logo {
+  margin-bottom: 2rem;
+}
+
+.welcome-icon {
+  width: 120px;
+  height: 120px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.welcome-subtitle {
+  font-size: 1.25rem;
+  color: var(--muted-foreground);
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+.welcome-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.welcome-feature {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  color: var(--foreground);
+  opacity: 0.9;
+}
+
+.feature-icon {
+  font-size: 1.25rem;
+}
+
+.welcome-start-btn {
+  background-color: var(--accent);
+  color: var(--background);
+  border: none;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(210, 180, 140, 0.3);
+}
+
+.welcome-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(210, 180, 140, 0.4);
+}
+
+.welcome-hint {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}

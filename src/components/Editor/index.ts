@@ -1,0 +1,1 @@
+export { MDXEditorComponent } from './MDXEditor';
