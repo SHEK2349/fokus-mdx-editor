@@ -261,6 +261,13 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
+  // currentArticleが設定された時に確実にloading=falseにする
+  useEffect(() => {
+    if (currentArticle) {
+      setLoading(false);
+    }
+  }, [currentArticle]);
+
   useEffect(() => {
     // 初回起動チェック
     const seen = localStorage.getItem('fokus-tutorial-seen');
