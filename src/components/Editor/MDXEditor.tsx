@@ -5,8 +5,12 @@
  */
 
 import { useRef, useCallback } from 'react';
-import MonacoEditor, { OnMount, Monaco } from '@monaco-editor/react';
+import MonacoEditor, { OnMount, Monaco, loader } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
+import * as monaco from 'monaco-editor';
+
+// Monaco Editorをローカルバンドルから読み込むように設定（CSP対応）
+loader.config({ monaco });
 
 interface MDXEditorProps {
     value: string;
