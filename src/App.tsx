@@ -506,23 +506,14 @@ function App() {
             {/* Editor + Preview */}
             <div className="editor-preview-container">
               <div className="editor-pane">
-                {loading ? (
-                  <div className="loading-state">
-                    <div className="spinner"></div>
-                    <p>記事を読み込み中...</p>
-                  </div>
-                ) : (
-                  <>
-                    <MDXEditorComponent
-                      value={content}
-                      onChange={setContent}
-                      darkMode={darkMode}
-                    />
-                    <div className="editor-status-bar">
-                      <span>{content.length} 文字</span>
-                    </div>
-                  </>
-                )}
+                <MDXEditorComponent
+                  value={content}
+                  onChange={setContent}
+                  darkMode={darkMode}
+                />
+                <div className="editor-status-bar">
+                  <span>{content.length} 文字</span>
+                </div>
               </div>
               {showPreview && (
                 <div className="preview-pane">
