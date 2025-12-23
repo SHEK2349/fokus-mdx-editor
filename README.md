@@ -1,6 +1,6 @@
 # Fokus. Editor
 
-![Fokus Editor Screenshot](landing/images/screenshot15.png)
+![Fokus Editor Screenshot](public/screenshot.png)
 
 **Astroブログのためのミニマルな MDX エディタ**
 
