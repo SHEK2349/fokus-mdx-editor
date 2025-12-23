@@ -102,21 +102,49 @@ export function FrontmatterEditor({
                         <div className="datetime-input-group">
                             <input
                                 type="date"
-                                value={frontmatter.pubDatetime?.slice(0, 10) || ''}
+                                value={(() => {
+                                    // UTCからローカル時間に変換して表示
+                                    if (!frontmatter.pubDatetime) return '';
+                                    const utcDate = new Date(frontmatter.pubDatetime);
+                                    const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
+                                    return localDate.toISOString().slice(0, 10);
+                                })()}
                                 onChange={(e) => {
                                     const date = e.target.value;
-                                    const time = frontmatter.pubDatetime?.slice(11, 16) || '00:00';
-                                    updateField('pubDatetime', `${date}T${time}:00.000Z`);
+                                    // 現在のローカル時間を取得
+                                    let currentTime = '00:00';
+                                    if (frontmatter.pubDatetime) {
+                                        const utcDate = new Date(frontmatter.pubDatetime);
+                                        const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
+                                        currentTime = localDate.toISOString().slice(11, 16);
+                                    }
+                                    // ローカル時間をUTCに変換して保存
+                                    const localDatetime = new Date(`${date}T${currentTime}:00`);
+                                    updateField('pubDatetime', localDatetime.toISOString());
                                 }}
                                 placeholder="2024-01-01"
                             />
                             <input
                                 type="time"
-                                value={frontmatter.pubDatetime?.slice(11, 16) || ''}
+                                value={(() => {
+                                    // UTCからローカル時間に変換して表示
+                                    if (!frontmatter.pubDatetime) return '';
+                                    const utcDate = new Date(frontmatter.pubDatetime);
+                                    const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
+                                    return localDate.toISOString().slice(11, 16);
+                                })()}
                                 onChange={(e) => {
-                                    const date = frontmatter.pubDatetime?.slice(0, 10) || new Date().toISOString().slice(0, 10);
                                     const time = e.target.value;
-                                    updateField('pubDatetime', `${date}T${time}:00.000Z`);
+                                    // 現在のローカル日付を取得
+                                    let currentDate = new Date().toISOString().slice(0, 10);
+                                    if (frontmatter.pubDatetime) {
+                                        const utcDate = new Date(frontmatter.pubDatetime);
+                                        const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
+                                        currentDate = localDate.toISOString().slice(0, 10);
+                                    }
+                                    // ローカル時間をUTCに変換して保存
+                                    const localDatetime = new Date(`${currentDate}T${time}:00`);
+                                    updateField('pubDatetime', localDatetime.toISOString());
                                 }}
                             />
                         </div>
