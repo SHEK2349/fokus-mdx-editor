@@ -117,8 +117,18 @@ function App() {
       if (!confirmed) return;
     }
 
+    setLoading(true);
     try {
-      const article = await invoke<Article>('get_article', { slug });
+      // タイムアウト設定（10秒）
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('読み込みがタイムアウトしました。ファイルが大きすぎるか、破損している可能性があります。')), 10000)
+      );
+
+      const article = await Promise.race([
+        invoke<Article>('get_article', { slug }),
+        timeout
+      ]);
+
       setCurrentArticle(article);
       setContent(article.content);
       setLastSavedContent(article.content);
@@ -126,8 +136,11 @@ function App() {
       setSelectedSlug(slug);
     } catch (error) {
       console.error('Failed to load article:', error);
-      alert('指定された記事が見つかりませんでした。リストを更新します。');
+      const errorMessage = error instanceof Error ? error.message : '指定された記事が見つかりませんでした。';
+      alert(`記事の読み込みに失敗しました: ${errorMessage}`);
       fetchArticles();
+    } finally {
+      setLoading(false);
     }
   }, [hasUnsavedChanges, fetchArticles]);
 
@@ -485,14 +498,23 @@ function App() {
             {/* Editor + Preview */}
             <div className="editor-preview-container">
               <div className="editor-pane">
-                <MDXEditorComponent
-                  value={content}
-                  onChange={setContent}
-                  darkMode={darkMode}
-                />
-                <div className="editor-status-bar">
-                  <span>{content.length} 文字</span>
-                </div>
+                {loading ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>記事を読み込み中...</p>
+                  </div>
+                ) : (
+                  <>
+                    <MDXEditorComponent
+                      value={content}
+                      onChange={setContent}
+                      darkMode={darkMode}
+                    />
+                    <div className="editor-status-bar">
+                      <span>{content.length} 文字</span>
+                    </div>
+                  </>
+                )}
               </div>
               {showPreview && (
                 <div className="preview-pane">

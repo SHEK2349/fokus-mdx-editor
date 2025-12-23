@@ -99,13 +99,27 @@ export function FrontmatterEditor({
                     {/* Row 3: 公開日時・トグル */}
                     <div className="form-group">
                         <label>公開日時</label>
-                        <input
-                            type="datetime-local"
-                            value={frontmatter.pubDatetime?.slice(0, 16) || ''}
-                            onChange={(e) =>
-                                updateField('pubDatetime', new Date(e.target.value).toISOString())
-                            }
-                        />
+                        <div className="datetime-input-group">
+                            <input
+                                type="date"
+                                value={frontmatter.pubDatetime?.slice(0, 10) || ''}
+                                onChange={(e) => {
+                                    const date = e.target.value;
+                                    const time = frontmatter.pubDatetime?.slice(11, 16) || '00:00';
+                                    updateField('pubDatetime', `${date}T${time}:00.000Z`);
+                                }}
+                                placeholder="2024-01-01"
+                            />
+                            <input
+                                type="time"
+                                value={frontmatter.pubDatetime?.slice(11, 16) || ''}
+                                onChange={(e) => {
+                                    const date = frontmatter.pubDatetime?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+                                    const time = e.target.value;
+                                    updateField('pubDatetime', `${date}T${time}:00.000Z`);
+                                }}
+                            />
+                        </div>
                     </div>
                     <div className="form-group">
                         <div className="flex gap-6">
