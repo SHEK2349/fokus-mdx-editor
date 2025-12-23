@@ -229,6 +229,7 @@ function App() {
     setLastSavedContent('');
     setHasUnsavedChanges(false);
     setSelectedSlug(null);
+    setLoading(false); // 確実にloading状態をfalseに設定
   }, [hasUnsavedChanges]);
 
   // Git コミット
