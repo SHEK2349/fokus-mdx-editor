@@ -32,7 +32,7 @@ function App() {
   const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
   const [content, setContent] = useState('');
   const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [darkMode, setDarkMode] = useState(getInitialDarkMode);
   const [showPreview, setShowPreview] = useState(true);
