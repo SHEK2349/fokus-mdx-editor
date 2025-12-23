@@ -1,6 +1,6 @@
 [package]
 name = "fokus-editor"
-version = "0.1.0"
+version = "0.1.1"
 description = "A minimal and beautiful MDX editor"
 authors = ["SHEK"]
 edition = "2021"
