@@ -6,13 +6,28 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 interface PreviewProps {
     content: string;
     className?: string;
+    repositoryPath?: string;
 }
 
-export function Preview({ content, className = '' }: PreviewProps) {
+// ローカル画像パスをファイルURLに変換
+const resolveImagePath = (src: string | undefined, repositoryPath: string | undefined): string => {
+    if (!src) return '';
+
+    // ローカルパス (src/assets/images/...) をファイルURLに変換
+    if (src.startsWith('src/assets/images/') && repositoryPath) {
+        return convertFileSrc(`${repositoryPath}/${src}`);
+    }
+
+    // R2 URLやhttp(s)はそのまま
+    return src;
+};
+
+export function Preview({ content, className = '', repositoryPath }: PreviewProps) {
     return (
         <div className={`preview-panel ${className}`}>
             <div className="preview-content prose">
@@ -51,7 +66,12 @@ export function Preview({ content, className = '' }: PreviewProps) {
                             </div>
                         ),
                         img: ({ src, alt }) => (
-                            <img src={src} alt={alt} className="preview-img" loading="lazy" />
+                            <img
+                                src={resolveImagePath(src, repositoryPath)}
+                                alt={alt}
+                                className="preview-img"
+                                loading="lazy"
+                            />
                         ),
                     }}
                 >

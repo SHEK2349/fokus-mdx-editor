@@ -8,19 +8,26 @@ import { useRef, useCallback } from 'react';
 import MonacoEditor, { OnMount, Monaco, loader } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import * as monaco from 'monaco-editor';
+import { invoke } from '@tauri-apps/api/core';
 
 // Monaco Editorをローカルバンドルから読み込むように設定（CSP対応）
 loader.config({ monaco });
+
+interface SavedImageResult {
+    localPath: string;
+    markdownPath: string;
+}
 
 interface MDXEditorProps {
     value: string;
     onChange: (value: string) => void;
     darkMode?: boolean;
+    slug?: string;  // 画像保存用のスラッグ
 }
 
 // iA Writer 準拠のショートカットはエディタマウント時に直接登録
 
-export function MDXEditorComponent({ value, onChange, darkMode = false }: MDXEditorProps) {
+export function MDXEditorComponent({ value, onChange, darkMode = false, slug }: MDXEditorProps) {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const monacoRef = useRef<Monaco | null>(null);
 
@@ -265,8 +272,66 @@ export function MDXEditorComponent({ value, onChange, darkMode = false }: MDXEdi
         editor.focus();
     }, [wrapSelection, addLinePrefix, insertLink]);
 
+    // 画像ドロップハンドラ
+    const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+
+        if (!slug) {
+            console.warn('Slug not provided, cannot save image');
+            return;
+        }
+
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+
+        if (imageFiles.length === 0) return;
+
+        const editor = editorRef.current;
+        if (!editor) return;
+
+        for (const file of imageFiles) {
+            try {
+                // ファイルをArrayBufferとして読み込み
+                const buffer = await file.arrayBuffer();
+                const bytes = Array.from(new Uint8Array(buffer));
+
+                // バックエンドに保存
+                const result = await invoke<SavedImageResult>('save_dropped_image', {
+                    slug,
+                    fileName: file.name,
+                    fileData: bytes,
+                });
+
+                // カーソル位置に画像パスを挿入
+                const position = editor.getPosition();
+                if (position) {
+                    const markdownImage = `![](${result.markdownPath})`;
+                    editor.executeEdits('insert-image', [{
+                        range: {
+                            startLineNumber: position.lineNumber,
+                            startColumn: position.column,
+                            endLineNumber: position.lineNumber,
+                            endColumn: position.column,
+                        },
+                        text: markdownImage + '\n',
+                    }]);
+                }
+            } catch (error) {
+                console.error('Failed to save dropped image:', error);
+            }
+        }
+    }, [slug]);
+
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+    }, []);
+
     return (
-        <div className="monaco-wrapper">
+        <div
+            className="monaco-wrapper"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+        >
             <MonacoEditor
                 height="100%"
                 defaultLanguage="markdown"
@@ -276,9 +341,9 @@ export function MDXEditorComponent({ value, onChange, darkMode = false }: MDXEdi
                 theme={darkMode ? 'vs-dark' : 'vs'}
                 options={{
                     fontSize: 16,
-                    fontFamily: "'iA Writer Mono', 'JetBrains Mono', 'Menlo', monospace",
-                    lineHeight: 28,
-                    wordWrap: 'on',
+                    fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",  // システムフォントを優先
+                    lineHeight: 0,  // 0 = フォントサイズから自動計算
+                    wordWrap: 'off',  // IMEジッター軽減のため一時的に無効化
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
                     padding: { top: 24, bottom: 24 },
@@ -294,8 +359,12 @@ export function MDXEditorComponent({ value, onChange, darkMode = false }: MDXEdi
                         horizontal: 'hidden',
                         verticalScrollbarSize: 8,
                     },
-                    cursorBlinking: 'smooth',
-                    cursorSmoothCaretAnimation: 'on',
+                    cursorBlinking: 'blink',  // シンプルなブリンク
+                    cursorSmoothCaretAnimation: 'off',
+                    fontLigatures: false,
+                    renderWhitespace: 'none',
+                    disableMonospaceOptimizations: true,  // モノスペース最適化を無効化（IME安定化）
+                    fixedOverflowWidgets: true,  // オーバーフローウィジェットの位置を固定
                 }}
             />
         </div>

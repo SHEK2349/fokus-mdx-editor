@@ -7,6 +7,7 @@ use commands::{
     get_settings, save_repository_settings,
     list_articles, get_article, create_article, update_article, delete_article,
     get_git_status, git_commit, git_push,
+    save_dropped_image,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -76,6 +77,7 @@ pub fn run() {
             get_git_status,
             git_commit,
             git_push,
+            save_dropped_image,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

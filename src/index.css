@@ -291,6 +291,34 @@ h3 {
   padding: 0 2rem;
 }
 
+/* Monaco Editor IME ジッター対策 */
+.monaco-wrapper .monaco-editor {
+  /* フォントのレンダリングを安定化 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.monaco-wrapper .monaco-editor .view-lines {
+  /* 行の高さを固定 */
+  contain: layout style;
+}
+
+.monaco-wrapper .monaco-editor .view-line {
+  /* 各行のレイアウトを安定化 */
+  will-change: contents;
+}
+
+.monaco-wrapper .monaco-editor .inputarea {
+  /* IME入力エリアの位置を安定化 */
+  transform: translateZ(0);
+}
+
+.monaco-wrapper .monaco-editor .cursor {
+  /* カーソルのちらつきを防止 */
+  will-change: transform;
+}
+
 /* ========================================
    Article List
    ======================================== */

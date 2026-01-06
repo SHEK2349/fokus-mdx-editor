@@ -510,6 +510,7 @@ function App() {
                   value={content}
                   onChange={setContent}
                   darkMode={darkMode}
+                  slug={currentArticle.slug}
                 />
                 <div className="editor-status-bar">
                   <span>{content.length} 文字</span>
@@ -517,7 +518,7 @@ function App() {
               </div>
               {showPreview && (
                 <div className="preview-pane">
-                  <Preview content={content} />
+                  <Preview content={content} repositoryPath={repositoryPath} />
                 </div>
               )}
             </div>

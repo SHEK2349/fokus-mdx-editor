@@ -167,6 +167,17 @@ pub fn create_article(request: CreateArticleRequest) -> Result<Article, String> 
         return Err(format!("Article '{}' already exists", request.slug));
     }
     
+    // 画像フォルダを自動生成
+    let settings = get_settings()?;
+    let images_dir = PathBuf::from(&settings.repository_path)
+        .join("src/assets/images")
+        .join(&request.slug);
+    
+    if !images_dir.exists() {
+        fs::create_dir_all(&images_dir)
+            .map_err(|e| format!("Failed to create images directory: {}", e))?;
+    }
+    
     let file_content = serialize_frontmatter(&request.frontmatter, &request.content);
     
     fs::write(&filepath, &file_content)
