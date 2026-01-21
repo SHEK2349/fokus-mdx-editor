@@ -1,26 +1,42 @@
-# Fokus. Mobile - モバイル版MDXエディタ 要件定義書
+# Fokus. Mobile (iOS) - モバイル版MDXエディタ 要件定義書
 
-**バージョン**: 1.0.0
+**バージョン**: 2.0.0
 **最終更新**: 2026-01-21
-**対象**: iOS 15+, Android 10+
+**対象**: iOS 15+（iPhone専用）
+**技術スタック**: React Native + Expo
 
 ---
 
 ## 1. プロジェクト概要
 
 ### 1.1 目的
-Astroブログ（Fokus.）のMDXファイルを**外出先から**編集・公開できるモバイルアプリケーションを開発する。デスクトップ版の主要機能を継承しつつ、**スマートフォンの特性を活かした革新的なUX**を提供する。
+Astroブログ（Fokus.）のMDXファイルを**iPhone/iPad から**編集・公開できるネイティブアプリを開発する。デスクトップ版のReactコードベースを**最大限再利用**しつつ、**iOSネイティブの洗練されたUX**を提供する。
 
 ### 1.2 コンセプト
-- **フォーカス・モード**: スマホの小画面を逆手に取り、集中執筆を促進
-- **ジェスチャー駆動**: タップ、スワイプ、ピンチで直感的に操作
+- **フォーカス・モード**: iPhoneの小画面で集中執筆を促進
+- **ネイティブ・ファースト**: SF Symbols、ネイティブタブ、Haptic Feedbackなどを活用
 - **クイック編集**: 通勤・移動中の5分間で記事の修正やアイデアメモ
 - **オフライン・ファースト**: ネット環境に関係なく執筆可能
+- **コード再利用**: デスクトップ版のReactコンポーネント・ロジックを最大活用
 
-### 1.3 対象ユーザー
-- デスクトップ版の既存ユーザー
+### 1.3 戦略的決定
+
+#### なぜiOS専用か
+1. **開発速度**: iOS 1プラットフォームに集中し、6週間でMVPリリース
+2. **ターゲット**: ブロガー・ライターはiPhoneユーザーが多い
+3. **品質重視**: Android対応でUI品質が低下するリスクを回避
+4. **Apple生態系**: Shortcuts、Widgets、Handoffなどの統合が容易
+
+#### なぜExpoか
+1. **既存資産活用**: デスクトップ版のReact/TypeScriptコードを再利用
+2. **開発体験**: Hot Reload、OTA更新、Expo Goでの即座テスト
+3. **ネイティブ統合**: Expo Modulesで純正iOS機能に簡単アクセス
+4. **保守性**: アップデート容易、破壊的変更が少ない
+
+### 1.4 対象ユーザー
+- デスクトップ版の既存ユーザー（iPhone所有者）
 - 外出先から記事を修正したいブロガー
-- スマホでメモをブログに変換したいライター
+- iPhoneでメモをブログに変換したいライター
 
 ---
 
@@ -28,193 +44,161 @@ Astroブログ（Fokus.）のMDXファイルを**外出先から**編集・公�
 
 ### 2.1 コア機能（デスクトップ版と同等）
 
-| 機能 | 優先度 | モバイル対応 | 説明 |
-|------|--------|--------------|------|
-| **Frontmatter編集** | 必須 | ○ | フォーム式UI、日付ピッカー、トグルスイッチ |
-| **本文エディタ** | 必須 | ○ | タッチ最適化Markdownエディタ |
-| **リアルタイムプレビュー** | 必須 | ○ | スワイプで切替、フルスクリーン表示 |
-| **記事一覧** | 必須 | ○ | カード型UI、プルダウンリフレッシュ |
-| **画像挿入** | 高 | ○ | カメラ撮影、ギャラリー選択、クラウドアップロード |
-| **タグ管理** | 高 | ○ | チップ型UI、オートコンプリート |
-| **Git統合** | 必須 | ○ | コミット・プッシュ、認証管理 |
-| **ダークモード** | 必須 | ○ | システム連動 + 手動切替 |
+| 機能 | 優先度 | iOS対応 | 実装方法 |
+|------|--------|---------|---------|
+| **Frontmatter編集** | 必須 | ○ | ネイティブフォーム（DateTimePicker, Switch） |
+| **本文エディタ** | 必須 | ○ | TextInput + Markdownハイライト |
+| **リアルタイムプレビュー** | 必須 | ○ | react-native-webview |
+| **記事一覧** | 必須 | ○ | FlashList（高速スクロール） |
+| **画像挿入** | 高 | ○ | expo-image-picker（カメラ・ギャラリー） |
+| **タグ管理** | 高 | ○ | カスタムチップUI |
+| **Git統合** | 必須 | ○ | isomorphic-git |
+| **ダークモード** | 必須 | ○ | useColorScheme（システム連動） |
 
-### 2.2 モバイル専用機能
+### 2.2 iOS専用機能
 
 | 機能 | 優先度 | 説明 |
 |------|--------|------|
-| **オフライン編集** | 必須 | ローカルキャッシュ、自動同期 |
-| **音声入力** | 高 | Markdownに変換（音声→テキスト） |
-| **ウィジェット** | 中 | ホーム画面から記事作成、下書き数表示 |
-| **プッシュ通知** | 中 | Git競合検出、プッシュ完了通知 |
-| **バックグラウンド同期** | 高 | ネット復帰時に自動プッシュ |
-| **ショートカット** | 低 | Siri Shortcuts対応 |
-| **位置情報タグ** | 低 | 旅行記事向け |
+| **オフライン編集** | 必須 | AsyncStorage + Git local commits |
+| **SF Symbols** | 高 | expo-symbols（5,000+のネイティブアイコン） |
+| **ネイティブタブバー** | 高 | Expo Router Native Tabs（iOS 26準拠） |
+| **Haptic Feedback** | 高 | expo-haptics（保存時、エラー時） |
+| **音声入力** | 中 | expo-speech（音声→テキスト） |
+| **ウィジェット** | 中 | @bacons/apple-targets（下書き数表示） |
+| **Siri Shortcuts** | 低 | expo-intents（「記事を作成」） |
+| **iCloud同期** | 低 | expo-file-system（設定バックアップ） |
+| **Handoff** | 低 | NSUserActivity（Mac版と連携） |
 
 ### 2.3 Git操作（出先からコミット）
 
 #### 認証方式
-1. **Personal Access Token (推奨)**
-   - GitHubやGitLabのPATをセキュアストレージに保存
+1. **Personal Access Token（推奨）**
+   - GitHubやGitLabのPATをSecureStoreに保存
    - 有効期限管理、自動更新
 
 2. **SSH鍵認証**
-   - デバイス内に秘密鍵を生成
-   - 公開鍵をGitホストに登録
-
-3. **OAuth (GitHub App)**
-   - GitHub Mobile連携
-   - ワンタップ認証
+   - expo-crypto で鍵ペア生成
+   - SecureStore に秘密鍵保存
 
 #### Git操作フロー
 ```
-[編集] → [保存] → [コミット] → [プッシュ]
+[編集] → [保存] → [ローカルコミット] → [プッシュ]
                        ↓
-                  [競合検出] → [手動マージ/自動解決]
+                  [オフライン時はキュー]
+                       ↓
+                  [ネット復帰で自動プッシュ]
 ```
 
 #### オフライン対応
-- **ローカルコミット**: オフライン時はローカルのみにコミット
-- **同期キュー**: ネット復帰時に自動プッシュ
+- **isomorphic-git**: 純粋JavaScriptのGit実装（iOS互換）
+- **ローカルコミット**: オフライン時はローカルのみ
+- **同期キュー**: AsyncStorageにキュー保存、ネット復帰で処理
 - **競合解決**: プッシュ失敗時にプル→マージ→再プッシュ
 
 ---
 
 ## 3. 技術選定
 
-### 3.1 プラットフォーム比較
-
-| 技術 | メリット | デメリット | 推奨度 |
-|------|---------|-----------|--------|
-| **React Native** | React知識活用、豊富なライブラリ | パフォーマンス課題 | ★★★★☆ |
-| **Flutter** | 高速、統一UI | Dart習得必要 | ★★★★★ |
-| **PWA** | 開発速度、Web共通化 | ネイティブ機能制限 | ★★★☆☆ |
-| **Capacitor + React** | Web資産活用、ネイティブ拡張 | ハイブリッドの制約 | ★★★★☆ |
-
-### 3.2 推奨構成：**Flutter + Rust (FFI)**
+### 3.1 推奨構成：**Expo + React Native**
 
 | レイヤー | 技術 | 理由 |
 |----------|------|------|
-| **UI** | Flutter | クロスプラットフォーム、高速レンダリング |
-| **Git操作** | libgit2 (Rust FFI) | ネイティブGit、高速 |
-| **認証** | flutter_secure_storage | OS標準の暗号化ストレージ |
-| **エディタ** | flutter_quill / code_text_field | Markdown対応 |
-| **同期** | Hive / Isar | 軽量ローカルDB |
-| **API連携** | dio | HTTP通信、リトライ機能 |
-| **状態管理** | Riverpod | 型安全、テスト容易 |
+| **フレームワーク** | Expo SDK 52+ | OTA更新、豊富なネイティブモジュール |
+| **ナビゲーション** | Expo Router | ファイルベース、ネイティブタブ対応 |
+| **Git操作** | isomorphic-git | 純粋JS、iOS互換、コンパクト |
+| **認証** | expo-secure-store | Keychain統合 |
+| **エディタ** | TextInput + カスタムハイライト | ネイティブキーボード |
+| **ストレージ** | AsyncStorage | 軽量KVS |
+| **状態管理** | Zustand | シンプル、デスクトップ版と統一 |
+| **スタイリング** | NativeWind | Tailwind風、デスクトップ版と統一 |
+| **アイコン** | expo-symbols | SF Symbols 6 |
 
-### 3.3 代替案：**Capacitor + React**
-
-デスクトップ版の資産を活用する場合：
+### 3.2 デスクトップ版との共通化
 
 ```
-[既存React UI] → [Capacitor] → [iOS/Android]
-                     ↓
-              [ネイティブプラグイン]
-              - Camera
-              - File System
-              - Secure Storage
+shared/
+├── types/
+│   ├── article.ts      # 記事型定義（共通）
+│   └── frontmatter.ts  # Frontmatter型定義（共通）
+├── utils/
+│   ├── yaml.ts         # YAML解析（共通）
+│   └── markdown.ts     # Markdown処理（共通）
+└── hooks/
+    ├── useArticles.ts  # 記事取得ロジック（共通）
+    └── useGit.ts       # Git操作ロジック（共通）
+
+// モバイル専用
+mobile/
+├── app/               # Expo Router（ファイルベース）
+│   ├── (tabs)/
+│   │   ├── index.tsx  # 記事一覧
+│   │   ├── editor.tsx # エディタ
+│   │   └── settings.tsx
+│   └── _layout.tsx
+├── components/        # モバイル専用UI
+└── ios/               # iOS native code
 ```
 
 ---
 
 ## 4. UI/UXデザイン
 
-### 4.1 画面構成
+### 4.1 iOS Human Interface Guidelines準拠
 
-#### ナビゲーション構造
-```
-┌─────────────────────────┐
-│  [タブバー]              │
-│  📝 記事 | 📂 一覧 | ⚙️ 設定 │
-└─────────────────────────┘
+#### ナビゲーション
+- **Native Tabs**: 画面下部タブバー（3タブ）
+  - 📝 記事
+  - 📂 一覧
+  - ⚙️ 設定
+- **モーダル**: 新規記事作成、設定詳細
+- **スワイプバック**: 標準のバックジェスチャー
 
-[記事] タブ:
-  ├─ Frontmatterカード（折りたたみ）
-  ├─ エディタエリア（スワイプでプレビュー）
-  └─ FAB（保存・コミット）
+#### タイポグラフィ
+- **SF Pro**: システムフォント
+- **Dynamic Type**: アクセシビリティ対応
+- **Noto Sans JP**: 日本語フォールバック
 
-[一覧] タブ:
-  ├─ 検索バー
-  ├─ フィルタ（下書き/公開/すべて）
-  └─ カードリスト（日付降順）
-
-[設定] タブ:
-  ├─ リポジトリ設定
-  ├─ Git認証
-  ├─ エディタ設定
-  └─ 同期設定
-```
-
-### 4.2 モバイル最適化UI
-
-#### エディタ画面
-```
-┌─────────────────────────────────────┐
-│ ◀ 戻る    [記事タイトル]    💾 保存 │
-├─────────────────────────────────────┤
-│ [Frontmatter]  ▼ 展開/折りたたみ    │
-├─────────────────────────────────────┤
-│                                     │
-│  # 本文エディタ                     │
-│  ここにMarkdownを入力...            │
-│                                     │
-│  [フローティングツールバー]         │
-│  B I ** [] 🔗 📷                   │
-│                                     │
-├─────────────────────────────────────┤
-│ [← スワイプでプレビュー]            │
-└─────────────────────────────────────┘
-       ↓ スワイプ
-┌─────────────────────────────────────┐
-│ ◀ 戻る    [プレビュー]    [編集]  │
-├─────────────────────────────────────┤
-│                                     │
-│  レンダリングされたHTML             │
-│                                     │
-│  画像、リンク、コードブロック       │
-│  すべて表示                         │
-│                                     │
-└─────────────────────────────────────┘
+#### カラー
+```javascript
+// デスクトップ版準拠 + iOS Dynamic Colors
+const colors = {
+  light: {
+    background: '#faf8f5',
+    foreground: '#3d3d3d',
+    accent: '#7b6d5d',
+    // iOS System Colors
+    systemBackground: 'rgb(242, 242, 247)',  // iOS標準
+    secondarySystemBackground: 'rgb(255, 255, 255)',
+  },
+  dark: {
+    background: '#1a1a1a',
+    foreground: '#e0dcd5',
+    accent: '#c9a87c',
+    // iOS System Colors
+    systemBackground: 'rgb(0, 0, 0)',
+    secondarySystemBackground: 'rgb(28, 28, 30)',
+  },
+};
 ```
 
-#### ジェスチャー操作
+### 4.2 ジェスチャー（react-native-gesture-handler）
 - **左スワイプ**: エディタ → プレビュー
 - **右スワイプ**: プレビュー → エディタ
-- **プルダウン**: リフレッシュ（記事一覧）
-- **長押し**: テキスト選択 → Markdownツールバー表示
-- **ピンチアウト**: プレビューズーム
+- **プルトゥリフレッシュ**: 記事一覧更新
+- **長押し**: 記事メニュー表示（編集・削除）
 
-#### フローティングアクションボタン (FAB)
-```
-      💾
-     / | \
-    📷 🔗 📝
-   (画像)(リンク)(メモ)
-```
+### 4.3 Haptic Feedback
+```javascript
+import * as Haptics from 'expo-haptics';
 
-### 4.3 カラーパレット（デスクトップ版準拠）
+// 保存成功
+Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-#### ライトモード
-- 背景: `#faf8f5`
-- テキスト: `#3d3d3d`
-- アクセント: `#7b6d5d`
-- カード: `#ffffff` (shadow: 0 2px 8px rgba(0,0,0,0.08))
+// エラー
+Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-#### ダークモード
-- 背景: `#1a1a1a`
-- テキスト: `#e0dcd5`
-- アクセント: `#c9a87c`
-- カード: `#2d2d2d` (shadow: 0 2px 8px rgba(0,0,0,0.3))
-
-### 4.4 タイポグラフィ（モバイル調整）
-
-```css
-/* モバイル向けにサイズ調整 */
-h1: 1.75rem (28px)  /* デスクトップ: 2.25rem */
-h2: 1.25rem (20px)  /* デスクトップ: 1.5rem */
-h3: 1rem (16px)     /* デスクトップ: 1.25rem */
-本文: 0.9375rem (15px) /* デスクトップ: 1rem */
+// 選択
+Haptics.selectionAsync();
 ```
 
 ---
@@ -224,36 +208,21 @@ h3: 1rem (16px)     /* デスクトップ: 1.25rem */
 ### 5.1 同期アーキテクチャ
 
 ```
-[モバイル]              [Git Remote]
-    ↓                        ↑
-[ローカルDB] ←→ [同期エンジン] → [GitHub/GitLab]
-    ↓                        ↓
-[ファイルシステム]    [認証レイヤー]
+[iOS App]                   [GitHub]
+    ↓                           ↑
+[AsyncStorage] ←→ [isomorphic-git] → [Remote]
+    ↓                           ↓
+[File System]              [PAT Auth]
 ```
 
 ### 5.2 オフライン編集フロー
 
 ```
-1. [記事編集] → ローカルDBに保存
-2. [保存ボタン] → ファイル生成 → ローカルGitコミット
+1. [記事編集] → AsyncStorageに保存
+2. [保存ボタン] → MDXファイル生成 → isomorphic-git commit
 3. [ネット検出] → 自動プッシュ試行
-4. [競合検出] → 通知 → 手動マージUI表示
+4. [競合検出] → 通知 → マージUI表示
 5. [マージ完了] → 再プッシュ → 成功通知
-```
-
-### 5.3 状態管理
-
-```dart
-// Riverpod状態管理例
-final articlesProvider = StateNotifierProvider<ArticlesNotifier, List<Article>>(
-  (ref) => ArticlesNotifier(ref.read(gitRepositoryProvider)),
-);
-
-final currentArticleProvider = StateProvider<Article?>((ref) => null);
-
-final syncStatusProvider = StateNotifierProvider<SyncStatus, SyncState>(
-  (ref) => SyncStatus(ref.read(gitRepositoryProvider)),
-);
 ```
 
 ---
@@ -264,173 +233,188 @@ final syncStatusProvider = StateNotifierProvider<SyncStatus, SyncState>(
 
 | 項目 | 目標 | 計測方法 |
 |------|------|----------|
-| アプリ起動時間 | < 2秒 | 初回表示まで |
-| 記事一覧表示 | < 500ms | 100件読み込み |
+| アプリ起動時間 | < 1.5秒 | Instruments |
+| 記事一覧表示 | < 300ms | FlashList最適化 |
 | エディタ入力遅延 | < 16ms | 60fps維持 |
-| プレビュー切替 | < 300ms | スワイプアニメーション |
-| Git プッシュ | < 5秒 | 1MB以下の差分 |
+| Git プッシュ | < 3秒 | isomorphic-git |
 
 ### 6.2 セキュリティ
 
-- **認証情報**: OS標準キーチェーン/KeyStore暗号化
-- **通信**: HTTPS/SSH強制
-- **ローカルDB**: SQLCipher暗号化
-- **バイオメトリクス**: Face ID/指紋認証（オプション）
+- **認証情報**: expo-secure-store（Keychain）
+- **通信**: HTTPS強制
+- **ローカルストレージ**: 平文（機密情報はSecureStore）
+- **Face ID/Touch ID**: expo-local-authentication
 
 ### 6.3 アクセシビリティ
 
-- **フォントサイズ**: システム設定連動（Dynamic Type）
-- **コントラスト**: WCAG AA準拠
-- **VoiceOver/TalkBack**: 全画面対応
-- **ジェスチャー代替**: ボタンUI併用
-
-### 6.4 バッテリー消費
-
-- **バックグラウンド同期**: 最小限（Wi-Fi時のみ）
-- **位置情報**: 使用時のみ
-- **通知**: プッシュ最適化
+- **Dynamic Type**: 全テキスト対応
+- **VoiceOver**: 全画面対応
+- **ハイコントラスト**: UIElementsColor使用
+- **Reduce Motion**: アニメーション無効化
 
 ---
 
 ## 7. 開発フェーズ
 
-### Phase 1: MVP（最小限の製品）- 8週間
-- [x] プロジェクトセットアップ（Flutter環境）
-- [ ] 記事一覧表示（ローカル読み込み）
-- [ ] Frontmatterエディタ（フォームUI）
-- [ ] Markdownエディタ（基本機能）
-- [ ] Git認証（PAT方式）
+### Phase 1: MVP - 6週間
+
+#### Week 1-2: プロジェクトセットアップ
+- [ ] Expo プロジェクト作成（`npx create-expo-app`）
+- [ ] 依存ライブラリ導入
+  - expo-router, expo-symbols, expo-secure-store
+  - isomorphic-git, nativewind, zustand
+- [ ] デスクトップ版からコード共通化
+  - types/, utils/, hooks/ を共有
+- [ ] Expo Go でテスト環境構築
+
+#### Week 3-4: コア機能実装
+- [ ] 記事一覧画面（FlashList）
+- [ ] Frontmatterエディタ（ネイティブフォーム）
+- [ ] Markdownエディタ（TextInput）
+- [ ] ローカルストレージ（AsyncStorage）
+- [ ] Git認証（PAT）
+
+#### Week 5-6: Git統合・リリース準備
+- [ ] isomorphic-git統合
 - [ ] コミット・プッシュ機能
-- [ ] オフライン対応（ローカル保存）
+- [ ] オフライン対応
+- [ ] TestFlight配布
+- [ ] ベータテスト
 
-### Phase 2: エンハンスメント - 6週間
-- [ ] リアルタイムプレビュー
-- [ ] スワイプジェスチャー
-- [ ] 画像挿入（カメラ・ギャラリー）
-- [ ] タグオートコンプリート
-- [ ] フローティングツールバー
-- [ ] 競合解決UI
+### Phase 2: エンハンスメント - 4週間
+- [ ] プレビュー機能
+- [ ] 画像挿入（expo-image-picker）
+- [ ] SF Symbolsアイコン統合
+- [ ] ネイティブタブバー
+- [ ] Haptic Feedback
 
-### Phase 3: 高度な機能 - 4週間
-- [ ] バックグラウンド同期
-- [ ] プッシュ通知
+### Phase 3: 高度な機能 - 2週間
 - [ ] ウィジェット
-- [ ] 音声入力
 - [ ] Siri Shortcuts
-- [ ] オフライン検索
+- [ ] iCloud同期（設定）
+- [ ] 音声入力
 
 ---
 
-## 8. 技術的課題
+## 8. 技術的課題と解決策
 
-### 8.1 Git操作のモバイル実装
+### 8.1 Git操作のiOS実装
 
 #### 課題
-- モバイル環境でのlibgit2統合
-- 大容量リポジトリのクローン（数百MB）
-- 複数デバイス間での競合解決
+- iOS ではネイティブGitクライアントが使えない
+- libgit2のバインディングが複雑
 
 #### 解決策
-1. **Shallow Clone**: `--depth=1`で最新コミットのみ
-2. **Sparse Checkout**: 記事ディレクトリのみ
-3. **Git LFS**: 画像は別管理
-4. **競合検出**: プッシュ前にフェッチ→差分確認
+**isomorphic-git** を使用
+- 純粋JavaScriptのGit実装
+- iOS/Android/Web全対応
+- ファイルシステムアクセスのみ必要
+
+```javascript
+import git from 'isomorphic-git';
+import * as FileSystem from 'expo-file-system';
+
+// コミット
+await git.commit({
+  fs: FileSystem,
+  dir: repoPath,
+  message: 'Update article',
+  author: {
+    name: 'Fokus Mobile',
+    email: 'mobile@fokus.dev',
+  },
+});
+
+// プッシュ
+await git.push({
+  fs: FileSystem,
+  http,
+  dir: repoPath,
+  remote: 'origin',
+  ref: 'main',
+  onAuth: () => ({ username: 'token', password: pat }),
+});
+```
 
 ### 8.2 エディタパフォーマンス
 
 #### 課題
-- 長文記事（10,000文字以上）での入力遅延
-- Markdownシンタックスハイライトのコスト
+- TextInputは大量テキストで遅延
+- Markdownハイライトのコスト
 
 #### 解決策
-1. **仮想スクロール**: 表示領域のみレンダリング
-2. **デバウンス処理**: 入力300ms後にハイライト更新
-3. **Web Worker**: パース処理をバックグラウンド
-
-### 8.3 バッテリー最適化
-
-#### 課題
-- Git同期によるバッテリー消費
-- バックグラウンドでの通信頻度
-
-#### 解決策
-1. **条件付き同期**:
-   - Wi-Fi接続時のみ
-   - バッテリー残量20%以上
-   - アプリ使用中のみ
-2. **増分同期**: 差分のみ送信
-3. **スケジューリング**: WorkManager (Android) / BackgroundTasks (iOS)
+1. **react-native-code-editor** または **react-native-syntax-highlighter**
+2. **デバウンス処理**: 300ms後にハイライト更新
+3. **仮想化**: 長文は可視範囲のみハイライト
 
 ---
 
-## 9. ユーザーストーリー
+## 9. リリース計画
 
-### US-01: 外出先で記事修正
-```
-As a ブロガー
-I want to 電車内で誤字を修正
-So that すぐにブログを更新できる
+### 9.1 TestFlightベータ
 
-Acceptance Criteria:
-- [ ] オフラインで編集可能
-- [ ] Wi-Fi接続時に自動プッシュ
-- [ ] プッシュ完了通知
-```
+#### Week 5: クローズドベータ
+- **対象**: 社内5名
+- **配布**: TestFlight
+- **期間**: 1週間
 
-### US-02: スマホで新規記事作成
-```
-As a ライター
-I want to カフェでスマホから記事を書く
-So that PCを持ち歩かなくてよい
+#### Week 6: パブリックベータ
+- **対象**: Twitter募集30名
+- **配布**: TestFlight
+- **期間**: 1週間
 
-Acceptance Criteria:
-- [ ] Frontmatter自動入力（日時・著者）
-- [ ] Markdownショートカット利用
-- [ ] 画像をカメラ撮影して挿入
-```
+### 9.2 App Storeリリース
 
-### US-03: 競合解決
-```
-As a ユーザー
-I want to PC版との競合を通知で知る
-So that データロスを防げる
-
-Acceptance Criteria:
-- [ ] プッシュ失敗時に通知
-- [ ] 競合ファイル表示
-- [ ] マージエディタで解決
-```
+**Week 7**: 正式リリース
+- App Store Connect にビルド提出
+- スクリーンショット、説明文準備
+- レビュー期間: 1-3日
 
 ---
 
-## 10. 今後の拡張性
+## 10. 成功指標（KPI）
 
-### ロードマップ（v2.0以降）
+### 10.1 開発KPI
 
-#### v2.0: コラボレーション機能
-- リアルタイム共同編集（CRDT）
-- コメント・レビュー機能
-- 変更履歴可視化
+| 指標 | 目標 |
+|------|------|
+| **アプリサイズ** | < 30MB |
+| **起動時間** | < 1.5秒 |
+| **TestFlight評価** | ★4.5以上 |
 
-#### v3.0: AI統合
-- Markdown整形
-- タイトル提案
-- SEO最適化
-- 翻訳機能
+### 10.2 ビジネスKPI（3ヶ月後）
 
-#### v4.0: マルチブログ対応
-- 複数リポジトリ管理
-- Hugo/Jekyll/Gatsbyサポート
-- カスタムFrontmatterスキーマ
+| 指標 | 目標 |
+|------|------|
+| **ダウンロード数** | 500件 |
+| **DAU** | 50名 |
+| **記事投稿数** | 300記事 |
+| **App Store評価** | ★4.5以上 |
 
 ---
 
-## 11. 参考資料
+## 11. 今後の拡張性
 
-- [GitHub Mobile](https://github.com/mobile) - Git操作のUX参考
-- [iA Writer](https://ia.net/writer) - モバイルエディタのベストプラクティス
-- [Notion Mobile](https://www.notion.so) - オフライン同期の実装
-- [Working Copy](https://workingcopyapp.com) - iOS向けGitクライアント
+### v2.0: Android対応（2026 Q3）
+- isomorphic-gitは既にAndroid対応
+- UIをMaterial Designに対応
+
+### v3.0: AI統合（2026 Q4）
+- Claude API統合（校正、タイトル提案）
+- 音声入力 → AI整形
+
+### v4.0: コラボレーション（2027 Q1）
+- リアルタイム共同編集（Yjs + Firestore）
+
+---
+
+## 12. 参考資料
+
+- [Expo Documentation](https://docs.expo.dev/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [isomorphic-git](https://isomorphic-git.org/)
+- [iOS Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
+- [iA Writer for iOS](https://ia.net/writer) - UX参考
 
 ---
 
@@ -438,4 +422,5 @@ Acceptance Criteria:
 
 | バージョン | 日付 | 変更内容 |
 |-----------|------|----------|
-| 1.0.0 | 2026-01-21 | 初版作成 |
+| 2.0.0 | 2026-01-21 | iOS + Expo専用に全面改訂 |
+| 1.0.0 | 2026-01-21 | 初版作成（Flutter版） |
