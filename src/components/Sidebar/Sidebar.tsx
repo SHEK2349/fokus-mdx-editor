@@ -19,6 +19,16 @@ interface SidebarProps {
     onGitRefresh: () => void;
 }
 
+// 日付をフォーマット（コンポーネント外に移動して再生成を防ぐ）
+const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
+
 export function Sidebar({
     articles,
     selectedSlug,
@@ -30,15 +40,6 @@ export function Sidebar({
     onPush,
     onGitRefresh,
 }: SidebarProps) {
-    // 日付をフォーマット
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('ja-JP', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
 
     return (
         <aside className="sidebar">
@@ -63,24 +64,29 @@ export function Sidebar({
                             <li
                                 key={article.slug}
                                 className={`article-item ${selectedSlug === article.slug ? 'selected' : ''}`}
-                                onClick={() => onSelectArticle(article.slug)}
                             >
-                                <h3>{article.title}</h3>
-                                <div className="meta">
-                                    {formatDate(article.pubDatetime)}
-                                    {article.draft && <span className="ml-2 text-amber-500">下書き</span>}
-                                    {article.featured && <span className="ml-2 text-purple-500">★</span>}
-                                </div>
-                                {article.tags.length > 0 && (
-                                    <div className="tags">
-                                        {article.tags.slice(0, 3).map((tag) => (
-                                            <span key={tag} className="tag">{tag}</span>
-                                        ))}
-                                        {article.tags.length > 3 && (
-                                            <span className="tag opacity-60">+{article.tags.length - 3}</span>
-                                        )}
+                                <button
+                                    onClick={() => onSelectArticle(article.slug)}
+                                    className="article-item-button"
+                                    aria-label={`記事を選択: ${article.title}`}
+                                >
+                                    <h3>{article.title}</h3>
+                                    <div className="meta">
+                                        {formatDate(article.pubDatetime)}
+                                        {article.draft && <span className="ml-2 text-amber-500">下書き</span>}
+                                        {article.featured && <span className="ml-2 text-purple-500">★</span>}
                                     </div>
-                                )}
+                                    {article.tags.length > 0 && (
+                                        <div className="tags">
+                                            {article.tags.slice(0, 3).map((tag) => (
+                                                <span key={tag} className="tag">{tag}</span>
+                                            ))}
+                                            {article.tags.length > 3 && (
+                                                <span className="tag opacity-60">+{article.tags.length - 3}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </button>
                             </li>
                         ))}
                     </ul>

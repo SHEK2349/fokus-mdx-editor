@@ -97,11 +97,15 @@ function App() {
     }
   }, []);
 
-  // 設定更新後のハンドラ
+  // 設定更新後のハンドラ - 並列実行でウォーターフォールを回避
   const handleSettingsUpdated = useCallback(() => {
-    fetchSettings();
-    fetchArticles();
-    fetchGitStatus();
+    Promise.all([
+      fetchSettings(),
+      fetchArticles(),
+      fetchGitStatus(),
+    ]).catch((error) => {
+      console.error('Failed to update after settings change:', error);
+    });
     // 初回設定完了後、エディタチュートリアルを開始
     const seen = localStorage.getItem('fokus-tutorial-seen');
     if (!seen) {
@@ -348,11 +352,15 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  // 初回読み込み
+  // 初回読み込み - 並列実行でウォーターフォールを回避
   useEffect(() => {
-    fetchSettings();
-    fetchArticles();
-    fetchGitStatus();
+    Promise.all([
+      fetchSettings(),
+      fetchArticles(),
+      fetchGitStatus(),
+    ]).catch((error) => {
+      console.error('Failed to initialize:', error);
+    });
   }, [fetchSettings, fetchArticles, fetchGitStatus]);
 
   // コンテンツ変更検出と自動保存（30秒）
