@@ -16,9 +16,10 @@ import { ArticleStorageService } from '@/services/storage/articleStorage';
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { articles, updateArticle } = useArticlesStore();
+  const { articles, updateArticle, addArticle } = useArticlesStore();
 
-  const article = articles.find((a) => a.id === id);
+  const isNewArticle = id === 'new';
+  const article = isNewArticle ? null : articles.find((a) => a.id === id);
 
   const [content, setContent] = useState(article?.content || '');
   const [frontmatter, setFrontmatter] = useState<FrontmatterData>({
@@ -32,23 +33,52 @@ export default function EditorScreen() {
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!article) return;
+    // タイトルの入力チェック
+    if (!frontmatter.title.trim()) {
+      Alert.alert('エラー', 'タイトルを入力してください');
+      return;
+    }
 
     setSaving(true);
     try {
-      const updatedArticle = {
-        ...article,
-        ...frontmatter,
-        content,
-      };
+      if (isNewArticle) {
+        // 新規記事作成
+        const newArticle = {
+          id: `article-${Date.now()}`,
+          slug: frontmatter.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, ''),
+          ...frontmatter,
+          content,
+        };
 
-      // Zustand storeを更新
-      updateArticle(article.id, updatedArticle);
+        // Zustand storeに追加
+        addArticle(newArticle);
 
-      // AsyncStorageに保存
-      await ArticleStorageService.saveArticle(updatedArticle);
+        // AsyncStorageに保存
+        await ArticleStorageService.saveArticle(newArticle);
 
-      Alert.alert('保存完了', '記事を保存しました');
+        Alert.alert('作成完了', '新しい記事を作成しました');
+      } else {
+        // 既存記事の更新
+        if (!article) return;
+
+        const updatedArticle = {
+          ...article,
+          ...frontmatter,
+          content,
+        };
+
+        // Zustand storeを更新
+        updateArticle(article.id, updatedArticle);
+
+        // AsyncStorageに保存
+        await ArticleStorageService.saveArticle(updatedArticle);
+
+        Alert.alert('保存完了', '記事を保存しました');
+      }
+
       router.back();
     } catch (error) {
       console.error('Save error:', error);
@@ -58,7 +88,8 @@ export default function EditorScreen() {
     }
   };
 
-  if (!article) {
+  // 新規記事でない場合に記事が見つからなかった場合のみエラー
+  if (!isNewArticle && !article) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>記事が見つかりません</Text>

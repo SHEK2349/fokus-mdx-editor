@@ -1,9 +1,51 @@
-import { StyleSheet, View, Text, FlatList } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  RefreshControl,
+  TouchableOpacity,
+} from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { useRouter } from 'expo-router';
 import { useArticlesStore } from '@/store/articlesStore';
 import { ArticleCard } from '@/components/ArticleCard';
+import { ArticleStorageService } from '@/services/storage/articleStorage';
 
 export default function ArticleListScreen() {
-  const { articles, loading } = useArticlesStore();
+  const router = useRouter();
+  const { articles, loading, setArticles, setLoading } = useArticlesStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // AsyncStorageから記事を読み込む
+  const loadArticles = async () => {
+    try {
+      setLoading(true);
+      const storedArticles = await ArticleStorageService.getAllArticles();
+      setArticles(storedArticles);
+    } catch (error) {
+      console.error('Failed to load articles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 初回読み込み
+  useEffect(() => {
+    loadArticles();
+  }, []);
+
+  // Pull-to-refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadArticles();
+    setRefreshing(false);
+  };
+
+  // 新規記事作成
+  const handleCreateArticle = () => {
+    router.push('/editor/new');
+  };
 
   if (loading) {
     return (
@@ -26,12 +68,25 @@ export default function ArticleListScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <FlashList
         data={articles}
         renderItem={({ item }) => <ArticleCard article={item} />}
         keyExtractor={(item) => item.id}
+        estimatedItemSize={140}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       />
+
+      {/* 新規記事作成ボタン */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleCreateArticle}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -62,5 +117,27 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
     marginTop: 8,
+  },
+  fab: {
+    position: 'absolute',
+    right: 24,
+    bottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#d97706',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  fabIcon: {
+    fontSize: 32,
+    color: '#fff',
+    fontWeight: '300',
+    lineHeight: 38,
   },
 });
