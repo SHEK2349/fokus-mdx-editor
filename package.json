@@ -15,9 +15,13 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.4.2",
     "@tauri-apps/plugin-opener": "^2",
+    "expo-haptics": "^15.0.8",
+    "expo-image-picker": "^17.0.10",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
+    "react-native-markdown-display": "^7.0.2",
+    "react-native-webview": "^13.16.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
     "remotion": "^4.0.407"

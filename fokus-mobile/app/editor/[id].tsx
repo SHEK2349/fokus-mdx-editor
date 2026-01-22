@@ -15,6 +15,10 @@ import { ArticleStorageService } from '@/services/storage/articleStorage';
 import { CommitDialog } from '@/components/CommitDialog';
 import { GitOperationsService } from '@/services/git/operations';
 import { GitSyncQueueService } from '@/services/git/syncQueue';
+import { MarkdownPreview } from '@/components/MarkdownPreview';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Haptics from 'expo-haptics';
 
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,14 +40,18 @@ export default function EditorScreen() {
   const [saving, setSaving] = useState(false);
   const [showCommitDialog, setShowCommitDialog] = useState(false);
   const [savedArticleData, setSavedArticleData] = useState<any>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [selectionStart, setSelectionStart] = useState(0);
 
   const handleSave = async () => {
     // タイトルの入力チェック
     if (!frontmatter.title.trim()) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('エラー', 'タイトルを入力してください');
       return;
     }
 
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSaving(true);
     try {
       if (isNewArticle) {
@@ -64,6 +72,7 @@ export default function EditorScreen() {
         // AsyncStorageに保存
         await ArticleStorageService.saveArticle(newArticle);
 
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('作成完了', '新しい記事を作成しました');
       } else {
         // 既存記事の更新
@@ -81,6 +90,7 @@ export default function EditorScreen() {
         // AsyncStorageに保存
         await ArticleStorageService.saveArticle(updatedArticle);
 
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('保存完了', '記事を保存しました');
       }
 
@@ -143,6 +153,81 @@ export default function EditorScreen() {
     }
   };
 
+  const handlePickImage = async () => {
+    try {
+      // 権限をリクエスト
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          '権限が必要です',
+          'カメラロールにアクセスするには権限が必要です'
+        );
+        return;
+      }
+
+      // 画像を選択
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const imageUri = result.assets[0].uri;
+      const filename = `image-${Date.now()}.jpg`;
+
+      // Gitリポジトリが初期化されているか確認
+      const isInitialized = await GitOperationsService.isInitialized();
+
+      if (isInitialized) {
+        // Gitリポジトリのimagesディレクトリにコピー
+        const destPath = `public/assets/images/${filename}`;
+
+        try {
+          // 画像をBase64でエンコード
+          const base64 = await FileSystem.readAsStringAsync(imageUri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+
+          // Uint8Arrayに変換してGitリポジトリに書き込み
+          const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+          await GitOperationsService.writeFile(destPath, bytes as any);
+
+          // Markdown画像タグを挿入
+          const imageMarkdown = `![${filename}](/assets/images/${filename})`;
+          insertTextAtCursor(imageMarkdown);
+
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert('成功', '画像を挿入しました');
+        } catch (error) {
+          console.error('Image copy error:', error);
+          Alert.alert('エラー', '画像のコピーに失敗しました');
+        }
+      } else {
+        // Gitリポジトリが未初期化の場合、相対パスで挿入
+        Alert.alert(
+          '注意',
+          'Gitリポジトリが未初期化です。画像参照を挿入しますが、実際のアップロードは手動で行う必要があります。'
+        );
+        const imageMarkdown = `![${filename}](/assets/images/${filename})`;
+        insertTextAtCursor(imageMarkdown);
+      }
+    } catch (error) {
+      console.error('Pick image error:', error);
+      Alert.alert('エラー', '画像の選択に失敗しました');
+    }
+  };
+
+  const insertTextAtCursor = (text: string) => {
+    const before = content.substring(0, selectionStart);
+    const after = content.substring(selectionStart);
+    setContent(before + text + after);
+  };
+
   const handleCommit = async (message: string, autoPush: boolean) => {
     try {
       // Gitリポジトリが初期化されているか確認
@@ -185,6 +270,7 @@ ${savedArticleData.content}`;
         await GitSyncQueueService.enqueuePush();
       }
 
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
         '成功',
         autoPush
@@ -237,16 +323,62 @@ ${savedArticleData.content}`;
 
         {/* 本文エディタ */}
         <View style={styles.editorSection}>
-          <Text style={styles.sectionLabel}>本文（Markdown）</Text>
-          <TextInput
-            style={styles.contentInput}
-            value={content}
-            onChangeText={setContent}
-            placeholder="# 見出し&#10;&#10;ここに本文を書く..."
-            placeholderTextColor="#9ca3af"
-            multiline
-            textAlignVertical="top"
-          />
+          <View style={styles.editorHeader}>
+            <Text style={styles.sectionLabel}>本文（Markdown）</Text>
+            <View style={styles.tabContainer}>
+              <TouchableOpacity
+                style={[styles.tab, !previewMode && styles.activeTab]}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setPreviewMode(false);
+                }}
+              >
+                <Text style={[styles.tabText, !previewMode && styles.activeTabText]}>
+                  編集
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, previewMode && styles.activeTab]}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setPreviewMode(true);
+                }}
+              >
+                <Text style={[styles.tabText, previewMode && styles.activeTabText]}>
+                  プレビュー
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {previewMode ? (
+            <View style={styles.previewContainer}>
+              <MarkdownPreview content={content} />
+            </View>
+          ) : (
+            <>
+              <View style={styles.editorToolbar}>
+                <TouchableOpacity
+                  style={styles.toolbarButton}
+                  onPress={handlePickImage}
+                >
+                  <Text style={styles.toolbarButtonText}>📷 画像挿入</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.contentInput}
+                value={content}
+                onChangeText={setContent}
+                onSelectionChange={(event) =>
+                  setSelectionStart(event.nativeEvent.selection.start)
+                }
+                placeholder="# 見出し&#10;&#10;ここに本文を書く..."
+                placeholderTextColor="#9ca3af"
+                multiline
+                textAlignVertical="top"
+              />
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -315,11 +447,66 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  editorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionLabel: {
     fontSize: 14,
     fontWeight: '500',
     color: '#4b5563',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 2,
+  },
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  activeTab: {
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  activeTabText: {
+    color: '#d97706',
+  },
+  previewContainer: {
+    minHeight: 400,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  editorToolbar: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
     marginBottom: 12,
+  },
+  toolbarButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  toolbarButtonText: {
+    fontSize: 14,
+    color: '#4b5563',
   },
   contentInput: {
     fontSize: 16,

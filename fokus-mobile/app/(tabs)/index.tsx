@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useArticlesStore } from '@/store/articlesStore';
 import { ArticleCard } from '@/components/ArticleCard';
 import { ArticleStorageService } from '@/services/storage/articleStorage';
+import * as Haptics from 'expo-haptics';
 
 export default function ArticleListScreen() {
   const router = useRouter();
@@ -43,7 +44,8 @@ export default function ArticleListScreen() {
   };
 
   // 新規記事作成
-  const handleCreateArticle = () => {
+  const handleCreateArticle = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/editor/new');
   };
 
