@@ -12,6 +12,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useArticlesStore } from '@/store/articlesStore';
 import { FrontmatterForm, FrontmatterData } from '@/components/FrontmatterForm';
 import { ArticleStorageService } from '@/services/storage/articleStorage';
+import { CommitDialog } from '@/components/CommitDialog';
+import { GitOperationsService } from '@/services/git/operations';
+import { GitSyncQueueService } from '@/services/git/syncQueue';
 
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,6 +34,8 @@ export default function EditorScreen() {
     tags: article?.tags || [],
   });
   const [saving, setSaving] = useState(false);
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+  const [savedArticleData, setSavedArticleData] = useState<any>(null);
 
   const handleSave = async () => {
     // タイトルの入力チェック
@@ -88,6 +93,112 @@ export default function EditorScreen() {
     }
   };
 
+  const handleSaveAndCommit = async () => {
+    // まず記事を保存
+    if (!frontmatter.title.trim()) {
+      Alert.alert('エラー', 'タイトルを入力してください');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      let articleData;
+
+      if (isNewArticle) {
+        // 新規記事作成
+        articleData = {
+          id: `article-${Date.now()}`,
+          slug: frontmatter.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, ''),
+          ...frontmatter,
+          content,
+        };
+
+        addArticle(articleData);
+        await ArticleStorageService.saveArticle(articleData);
+      } else {
+        // 既存記事の更新
+        if (!article) return;
+
+        articleData = {
+          ...article,
+          ...frontmatter,
+          content,
+        };
+
+        updateArticle(article.id, articleData);
+        await ArticleStorageService.saveArticle(articleData);
+      }
+
+      // 保存後、コミットダイアログを表示
+      setSavedArticleData(articleData);
+      setShowCommitDialog(true);
+    } catch (error) {
+      console.error('Save error:', error);
+      Alert.alert('エラー', '保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCommit = async (message: string, autoPush: boolean) => {
+    try {
+      // Gitリポジトリが初期化されているか確認
+      const isInitialized = await GitOperationsService.isInitialized();
+
+      if (!isInitialized) {
+        Alert.alert(
+          'エラー',
+          'Gitリポジトリが初期化されていません。設定画面でリポジトリをクローンしてください。'
+        );
+        return;
+      }
+
+      // 記事ファイルをGitリポジトリに書き込み
+      if (savedArticleData) {
+        const filepath = `content/blog/${savedArticleData.slug}.md`;
+
+        // Frontmatterとコンテンツを結合
+        const fileContent = `---
+title: ${savedArticleData.title}
+pubDatetime: ${savedArticleData.pubDatetime}
+description: ${savedArticleData.description}
+draft: ${savedArticleData.draft}
+featured: ${savedArticleData.featured}
+tags:
+${savedArticleData.tags.map((tag: string) => `  - ${tag}`).join('\n')}
+---
+
+${savedArticleData.content}`;
+
+        await GitOperationsService.writeFile(filepath, fileContent);
+        await GitOperationsService.add(filepath);
+      }
+
+      // コミットをキューに追加
+      await GitSyncQueueService.enqueueCommit({ message });
+
+      if (autoPush) {
+        // プッシュもキューに追加
+        await GitSyncQueueService.enqueuePush();
+      }
+
+      Alert.alert(
+        '成功',
+        autoPush
+          ? 'コミットとプッシュをキューに追加しました'
+          : 'コミットをキューに追加しました'
+      );
+
+      router.back();
+    } catch (error) {
+      console.error('Commit error:', error);
+      Alert.alert('エラー', 'コミット処理に失敗しました');
+    }
+  };
+
   // 新規記事でない場合に記事が見つからなかった場合のみエラー
   if (!isNewArticle && !article) {
     return (
@@ -103,11 +214,18 @@ export default function EditorScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.cancelButton}>キャンセル</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
-          <Text style={[styles.saveButton, saving && styles.disabledButton]}>
-            {saving ? '保存中...' : '保存'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={handleSave} disabled={saving}>
+            <Text style={[styles.saveButton, saving && styles.disabledButton]}>
+              {saving ? '保存中...' : '保存'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSaveAndCommit} disabled={saving}>
+            <Text style={[styles.commitButton, saving && styles.disabledButton]}>
+              {saving ? '保存中...' : 'コミット'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -131,6 +249,18 @@ export default function EditorScreen() {
           />
         </View>
       </ScrollView>
+
+      {/* コミットダイアログ */}
+      <CommitDialog
+        visible={showCommitDialog}
+        onClose={() => setShowCommitDialog(false)}
+        onCommit={handleCommit}
+        defaultMessage={
+          isNewArticle
+            ? `Add new article: ${frontmatter.title}`
+            : `Update article: ${frontmatter.title}`
+        }
+      />
     </View>
   );
 }
@@ -154,9 +284,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6b7280',
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
   saveButton: {
     fontSize: 16,
     color: '#7b6d5d',
+    fontWeight: '600',
+  },
+  commitButton: {
+    fontSize: 16,
+    color: '#d97706',
     fontWeight: '600',
   },
   disabledButton: {
