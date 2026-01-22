@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { HapticsWrapper, ImpactFeedbackStyle } from '../utils/haptics';
 import type { Article } from '../store/articlesStore';
 
 interface ArticleCardProps {
@@ -11,7 +11,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
   const router = useRouter();
 
   const handlePress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await HapticsWrapper.impactAsync(ImpactFeedbackStyle.Light);
     router.push(`/editor/${article.id}`);
   };
 

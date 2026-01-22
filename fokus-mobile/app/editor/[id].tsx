@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Text,
   Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useArticlesStore } from '@/store/articlesStore';
@@ -16,9 +17,13 @@ import { CommitDialog } from '@/components/CommitDialog';
 import { GitOperationsService } from '@/services/git/operations';
 import { GitSyncQueueService } from '@/services/git/syncQueue';
 import { MarkdownPreview } from '@/components/MarkdownPreview';
+import {
+  HapticsWrapper,
+  ImpactFeedbackStyle,
+  NotificationFeedbackType,
+} from '@/utils/haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
-import * as Haptics from 'expo-haptics';
 
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,12 +51,12 @@ export default function EditorScreen() {
   const handleSave = async () => {
     // タイトルの入力チェック
     if (!frontmatter.title.trim()) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await HapticsWrapper.notificationAsync(NotificationFeedbackType.Error);
       Alert.alert('エラー', 'タイトルを入力してください');
       return;
     }
 
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await HapticsWrapper.impactAsync(ImpactFeedbackStyle.Medium);
     setSaving(true);
     try {
       if (isNewArticle) {
@@ -72,7 +77,7 @@ export default function EditorScreen() {
         // AsyncStorageに保存
         await ArticleStorageService.saveArticle(newArticle);
 
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await HapticsWrapper.notificationAsync(NotificationFeedbackType.Success);
         Alert.alert('作成完了', '新しい記事を作成しました');
       } else {
         // 既存記事の更新
@@ -90,7 +95,7 @@ export default function EditorScreen() {
         // AsyncStorageに保存
         await ArticleStorageService.saveArticle(updatedArticle);
 
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await HapticsWrapper.notificationAsync(NotificationFeedbackType.Success);
         Alert.alert('保存完了', '記事を保存しました');
       }
 
@@ -202,7 +207,7 @@ export default function EditorScreen() {
           const imageMarkdown = `![${filename}](/assets/images/${filename})`;
           insertTextAtCursor(imageMarkdown);
 
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          await HapticsWrapper.notificationAsync(NotificationFeedbackType.Success);
           Alert.alert('成功', '画像を挿入しました');
         } catch (error) {
           console.error('Image copy error:', error);
@@ -271,7 +276,7 @@ ${savedArticleData.content}`;
         await GitSyncQueueService.enqueuePush();
       }
 
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await HapticsWrapper.notificationAsync(NotificationFeedbackType.Success);
       Alert.alert(
         '成功',
         autoPush
@@ -330,7 +335,7 @@ ${savedArticleData.content}`;
               <TouchableOpacity
                 style={[styles.tab, !previewMode && styles.activeTab]}
                 onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  await HapticsWrapper.impactAsync(ImpactFeedbackStyle.Light);
                   setPreviewMode(false);
                 }}
               >
@@ -341,7 +346,7 @@ ${savedArticleData.content}`;
               <TouchableOpacity
                 style={[styles.tab, previewMode && styles.activeTab]}
                 onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  await HapticsWrapper.impactAsync(ImpactFeedbackStyle.Light);
                   setPreviewMode(true);
                 }}
               >
