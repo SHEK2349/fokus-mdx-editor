@@ -86,7 +86,8 @@ export class GitOperationsService {
    */
   static async getCurrentBranch(): Promise<string | null> {
     try {
-      return await git.currentBranch({ fs, dir: REPO_DIR });
+      const branch = await git.currentBranch({ fs, dir: REPO_DIR });
+      return branch || null;
     } catch (error) {
       console.error('Get current branch error:', error);
       return null;

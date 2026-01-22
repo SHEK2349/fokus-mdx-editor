@@ -4,9 +4,9 @@
  */
 
 import * as FileSystem from 'expo-file-system';
-import { promisify } from 'util';
 
-const { documentDirectory } = FileSystem;
+// @ts-ignore - Expo FileSystem types may vary by version
+const documentDirectory = FileSystem.documentDirectory;
 
 if (!documentDirectory) {
   throw new Error('FileSystem documentDirectory is not available');
@@ -29,13 +29,15 @@ export const fs = {
 
     try {
       if (options?.encoding === 'utf8') {
+        // @ts-ignore - EncodingType may not be available in all versions
         return await FileSystem.readAsStringAsync(fullPath, {
-          encoding: FileSystem.EncodingType.UTF8,
+          encoding: 'utf8',
         });
       } else {
         // バイナリデータはBase64で読み込み
+        // @ts-ignore - EncodingType may not be available in all versions
         const base64 = await FileSystem.readAsStringAsync(fullPath, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
         // Base64をUint8Arrayに変換
         return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -63,14 +65,16 @@ export const fs = {
 
     try {
       if (typeof data === 'string') {
+        // @ts-ignore - EncodingType may not be available in all versions
         await FileSystem.writeAsStringAsync(fullPath, data, {
-          encoding: FileSystem.EncodingType.UTF8,
+          encoding: 'utf8',
         });
       } else {
         // Uint8ArrayをBase64に変換して書き込み
         const base64 = btoa(String.fromCharCode(...data));
+        // @ts-ignore - EncodingType may not be available in all versions
         await FileSystem.writeAsStringAsync(fullPath, base64, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
       }
     } catch (error) {

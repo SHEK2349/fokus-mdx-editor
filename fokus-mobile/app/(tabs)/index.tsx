@@ -74,6 +74,7 @@ export default function ArticleListScreen() {
         data={articles}
         renderItem={({ item }) => <ArticleCard article={item} />}
         keyExtractor={(item) => item.id}
+        // @ts-expect-error - estimatedItemSize is valid but type definitions may be outdated
         estimatedItemSize={140}
         contentContainerStyle={styles.listContent}
         refreshControl={

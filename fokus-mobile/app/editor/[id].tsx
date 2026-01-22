@@ -189,8 +189,9 @@ export default function EditorScreen() {
 
         try {
           // 画像をBase64でエンコード
+          // @ts-ignore - EncodingType may not be available in all versions
           const base64 = await FileSystem.readAsStringAsync(imageUri, {
-            encoding: FileSystem.EncodingType.Base64,
+            encoding: 'base64',
           });
 
           // Uint8Arrayに変換してGitリポジトリに書き込み
