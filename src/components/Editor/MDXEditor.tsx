@@ -23,11 +23,12 @@ interface MDXEditorProps {
     onChange: (value: string) => void;
     darkMode?: boolean;
     slug?: string;  // 画像保存用のスラッグ
+    fontSize?: number;
 }
 
 // iA Writer 準拠のショートカットはエディタマウント時に直接登録
 
-export function MDXEditorComponent({ value, onChange, darkMode = false, slug }: MDXEditorProps) {
+export function MDXEditorComponent({ value, onChange, darkMode = false, slug, fontSize = 16 }: MDXEditorProps) {
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     const monacoRef = useRef<Monaco | null>(null);
 
@@ -270,68 +271,63 @@ export function MDXEditorComponent({ value, onChange, darkMode = false, slug }: 
 
         // フォーカス
         editor.focus();
-    }, [wrapSelection, addLinePrefix, insertLink]);
 
-    // 画像ドロップハンドラ
-    const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
+        // Monaco EditorのDOMにドロップイベントを追加
+        const editorDom = editor.getDomNode();
+        if (editorDom) {
+            editorDom.addEventListener('dragover', (e: DragEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
 
-        if (!slug) {
-            console.warn('Slug not provided, cannot save image');
-            return;
-        }
+            editorDom.addEventListener('drop', async (e: DragEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-        const files = Array.from(e.dataTransfer.files);
-        const imageFiles = files.filter(f => f.type.startsWith('image/'));
-
-        if (imageFiles.length === 0) return;
-
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        for (const file of imageFiles) {
-            try {
-                // ファイルをArrayBufferとして読み込み
-                const buffer = await file.arrayBuffer();
-                const bytes = Array.from(new Uint8Array(buffer));
-
-                // バックエンドに保存
-                const result = await invoke<SavedImageResult>('save_dropped_image', {
-                    slug,
-                    fileName: file.name,
-                    fileData: bytes,
-                });
-
-                // カーソル位置に画像パスを挿入
-                const position = editor.getPosition();
-                if (position) {
-                    const markdownImage = `![](${result.markdownPath})`;
-                    editor.executeEdits('insert-image', [{
-                        range: {
-                            startLineNumber: position.lineNumber,
-                            startColumn: position.column,
-                            endLineNumber: position.lineNumber,
-                            endColumn: position.column,
-                        },
-                        text: markdownImage + '\n',
-                    }]);
+                if (!slug) {
+                    console.warn('Slug not provided, cannot save image');
+                    return;
                 }
-            } catch (error) {
-                console.error('Failed to save dropped image:', error);
-            }
-        }
-    }, [slug]);
 
-    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-    }, []);
+                const files = Array.from(e.dataTransfer?.files || []) as File[];
+                const imageFiles = files.filter((f: File) => f.type.startsWith('image/'));
+
+                if (imageFiles.length === 0) return;
+
+                for (const file of imageFiles) {
+                    try {
+                        const buffer = await file.arrayBuffer();
+                        const bytes = Array.from(new Uint8Array(buffer));
+
+                        const result = await invoke<SavedImageResult>('save_dropped_image', {
+                            slug,
+                            fileName: file.name,
+                            fileData: bytes,
+                        });
+
+                        const position = editor.getPosition();
+                        if (position) {
+                            const markdownImage = `![](${result.markdownPath})`;
+                            editor.executeEdits('insert-image', [{
+                                range: {
+                                    startLineNumber: position.lineNumber,
+                                    startColumn: position.column,
+                                    endLineNumber: position.lineNumber,
+                                    endColumn: position.column,
+                                },
+                                text: markdownImage + '\n',
+                            }]);
+                        }
+                    } catch (error) {
+                        console.error('Failed to save dropped image:', error);
+                    }
+                }
+            });
+        }
+    }, [wrapSelection, addLinePrefix, insertLink, slug]);
 
     return (
-        <div
-            className="monaco-wrapper"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-        >
+        <div className="monaco-wrapper">
             <MonacoEditor
                 height="100%"
                 defaultLanguage="markdown"
@@ -340,10 +336,10 @@ export function MDXEditorComponent({ value, onChange, darkMode = false, slug }: 
                 onMount={handleEditorMount}
                 theme={darkMode ? 'vs-dark' : 'vs'}
                 options={{
-                    fontSize: 16,
+                    fontSize,
                     fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",  // システムフォントを優先
                     lineHeight: 0,  // 0 = フォントサイズから自動計算
-                    wordWrap: 'off',  // IMEジッター軽減のため一時的に無効化
+                    wordWrap: 'on',
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
                     padding: { top: 24, bottom: 24 },

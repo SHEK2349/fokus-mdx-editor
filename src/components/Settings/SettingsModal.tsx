@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -92,12 +93,32 @@ export function SettingsModal({ isOpen, onClose, onSettingsUpdated, isInitialSet
 
                     <div className="form-group">
                         <label>リポジトリパス</label>
-                        <input
-                            type="text"
-                            value={repositoryPath}
-                            onChange={(e) => setRepositoryPath(e.target.value)}
-                            placeholder="/path/to/your/repository"
-                        />
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={repositoryPath}
+                                onChange={(e) => setRepositoryPath(e.target.value)}
+                                placeholder="/path/to/your/repository"
+                                className="flex-1"
+                            />
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    const selected = await open({
+                                        directory: true,
+                                        multiple: false,
+                                        title: 'リポジトリフォルダを選択',
+                                    });
+                                    if (selected && typeof selected === 'string') {
+                                        setRepositoryPath(selected);
+                                    }
+                                }}
+                                className="btn-secondary"
+                                style={{ whiteSpace: 'nowrap' }}
+                            >
+                                参照...
+                            </button>
+                        </div>
                         <span className="form-hint">
                             Gitリポジトリのルートディレクトリを指定してください
                         </span>
@@ -162,6 +183,18 @@ export function SettingsModal({ isOpen, onClose, onSettingsUpdated, isInitialSet
                                     <div className="shortcut-item">
                                         <span className="shortcut-desc">引用</span>
                                         <kbd className="shortcut-key">Cmd + '</kbd>
+                                    </div>
+                                    <div className="shortcut-item">
+                                        <span className="shortcut-desc">新規記事</span>
+                                        <kbd className="shortcut-key">Cmd + N</kbd>
+                                    </div>
+                                    <div className="shortcut-item">
+                                        <span className="shortcut-desc">文字拡大</span>
+                                        <kbd className="shortcut-key">Cmd + +</kbd>
+                                    </div>
+                                    <div className="shortcut-item">
+                                        <span className="shortcut-desc">文字縮小</span>
+                                        <kbd className="shortcut-key">Cmd + -</kbd>
                                     </div>
                                 </div>
                             </div>

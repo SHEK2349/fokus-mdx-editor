@@ -12,6 +12,7 @@ import { FrontmatterEditor } from './components/Frontmatter';
 import { Preview } from './components/Preview';
 import { SettingsModal } from './components/Settings';
 import { WelcomeScreen } from './components/Welcome';
+import { ToastContainer, useToast } from './components/Toast';
 import type { ArticleListItem, Article, GitStatus } from './types';
 import { TutorialOverlay, type TutorialStep } from './components/Tutorial';
 import './index.css';
@@ -42,6 +43,19 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [repositoryPath, setRepositoryPath] = useState('');
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // フォントサイズ
+  const getInitialFontSize = () => {
+    const stored = localStorage.getItem('fokus-fontSize');
+    return stored ? parseInt(stored, 10) : 16;
+  };
+  const [fontSize, setFontSize] = useState(getInitialFontSize);
+
+  // 最終保存時刻
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  // トースト通知
+  const { toasts, addToast, removeToast } = useToast();
 
   // 記事一覧を取得
   const fetchArticles = useCallback(async () => {
@@ -172,7 +186,8 @@ function App() {
         });
       }
 
-      console.log('Saved successfully');
+      addToast('保存しました', 'success');
+      setLastSavedAt(new Date());
       if (isNew) {
         setCurrentArticle({ ...currentArticle, filepath: savedArticle.filepath });
         setSelectedSlug(savedArticle.slug);
@@ -187,7 +202,7 @@ function App() {
       fetchGitStatus();
     } catch (error) {
       console.error('Failed to save:', error);
-      alert(`保存に失敗しました: ${error}`);
+      addToast(`保存に失敗しました: ${error}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -239,10 +254,11 @@ function App() {
 
     try {
       await invoke('git_commit', { request: { message: commitMessage } });
-      console.log('Committed successfully');
+      addToast('コミットしました', 'success');
       fetchGitStatus();
     } catch (error) {
       console.error('Failed to commit:', error);
+      addToast(`コミットに失敗しました: ${error}`, 'error');
     }
   }, [fetchGitStatus]);
 
@@ -250,12 +266,13 @@ function App() {
   const handlePush = useCallback(async () => {
     try {
       await invoke('git_push');
-      console.log('Pushed successfully');
+      addToast('プッシュしました', 'success');
       fetchGitStatus();
     } catch (error) {
       console.error('Failed to push:', error);
+      addToast(`プッシュに失敗しました: ${error}`, 'error');
     }
-  }, [fetchGitStatus]);
+  }, [fetchGitStatus, addToast]);
 
   // Welcome & Tutorial State
   const [showWelcome, setShowWelcome] = useState(false);
@@ -335,6 +352,45 @@ function App() {
   ];
 
 
+  // 記事削除
+  const handleDeleteArticle = useCallback(async (slug: string) => {
+    const confirmed = window.confirm(`「${slug}」を削除しますか？この操作は取り消せません。`);
+    if (!confirmed) return;
+
+    try {
+      await invoke('delete_article', { slug });
+      addToast('記事を削除しました', 'success');
+      if (selectedSlug === slug) {
+        setCurrentArticle(null);
+        setSelectedSlug(null);
+        setContent('');
+        setLastSavedContent('');
+        setHasUnsavedChanges(false);
+      }
+      fetchArticles();
+      fetchGitStatus();
+    } catch (error) {
+      console.error('Failed to delete article:', error);
+      addToast(`削除に失敗しました: ${error}`, 'error');
+    }
+  }, [selectedSlug, fetchArticles, fetchGitStatus, addToast]);
+
+  // フォントサイズ変更
+  const changeFontSize = useCallback((delta: number) => {
+    setFontSize(prev => {
+      const newSize = Math.min(32, Math.max(10, prev + delta));
+      localStorage.setItem('fokus-fontSize', String(newSize));
+      return newSize;
+    });
+  }, []);
+
+  // 読了時間計算（日本語: 500字/分）
+  const readingTime = Math.max(1, Math.ceil(content.length / 500));
+  const lineCount = content.split('\n').length;
+
+  // 全タグの抽出
+  const allTags = Array.from(new Set(articles.flatMap(a => a.tags))).sort();
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -342,11 +398,26 @@ function App() {
         e.preventDefault();
         handleSave();
       }
+      // Cmd+N: 新規記事
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        handleNewArticle();
+      }
+      // Cmd++: フォントサイズ拡大
+      if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        changeFontSize(1);
+      }
+      // Cmd+-: フォントサイズ縮小
+      if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+        e.preventDefault();
+        changeFontSize(-1);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave]);
+  }, [handleSave, handleNewArticle, changeFontSize]);
 
   // 初回読み込み
   useEffect(() => {
@@ -473,6 +544,7 @@ function App() {
           selectedSlug={selectedSlug}
           onSelectArticle={handleSelectArticle}
           onNewArticle={handleNewArticle}
+          onDeleteArticle={handleDeleteArticle}
           loading={loading}
           gitStatus={gitStatus}
           onCommit={handleCommit}
@@ -501,6 +573,7 @@ function App() {
                   slug: newSlug,
                 })
               }
+              allTags={allTags}
             />
 
             {/* Editor + Preview */}
@@ -511,9 +584,21 @@ function App() {
                   onChange={setContent}
                   darkMode={darkMode}
                   slug={currentArticle.slug}
+                  fontSize={fontSize}
                 />
                 <div className="editor-status-bar">
-                  <span>{content.length} 文字</span>
+                  <span>{content.length} 文字 / {lineCount} 行</span>
+                  <span>約 {readingTime} 分で読了</span>
+                  <span className="font-size-control">
+                    <button onClick={() => changeFontSize(-1)} title="文字を小さく">A-</button>
+                    <span>{fontSize}px</span>
+                    <button onClick={() => changeFontSize(1)} title="文字を大きく">A+</button>
+                  </span>
+                  {lastSavedAt && (
+                    <span className="last-saved" title={lastSavedAt.toLocaleTimeString('ja-JP')}>
+                      最終保存: {lastSavedAt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
                 </div>
               </div>
               {showPreview && (
@@ -557,6 +642,9 @@ function App() {
       {showWelcome && (
         <WelcomeScreen onStart={handleWelcomeStart} />
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

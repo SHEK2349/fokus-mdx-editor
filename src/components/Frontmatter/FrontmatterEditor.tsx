@@ -12,6 +12,7 @@ interface FrontmatterEditorProps {
     slug: string;
     onChange: (frontmatter: ArticleFrontmatter) => void;
     onSlugChange: (slug: string) => void;
+    allTags?: string[];
 }
 
 export function FrontmatterEditor({
@@ -19,9 +20,16 @@ export function FrontmatterEditor({
     slug,
     onChange,
     onSlugChange,
+    allTags = [],
 }: FrontmatterEditorProps) {
     const [tagInput, setTagInput] = useState('');
     const [isExpanded, setIsExpanded] = useState(true);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    // フィルタリングされたタグ候補
+    const filteredTags = allTags.filter(
+        t => t.toLowerCase().includes(tagInput.toLowerCase()) && !frontmatter.tags.includes(t)
+    );
 
     // Frontmatterの特定フィールドを更新
     const updateField = <K extends keyof ArticleFrontmatter>(
@@ -32,11 +40,12 @@ export function FrontmatterEditor({
     };
 
     // タグを追加
-    const addTag = () => {
-        const newTag = tagInput.trim();
+    const addTag = (tagToAdd?: string) => {
+        const newTag = (tagToAdd || tagInput).trim();
         if (newTag && !frontmatter.tags.includes(newTag)) {
             updateField('tags', [...frontmatter.tags, newTag]);
             setTagInput('');
+            setShowSuggestions(false);
         }
     };
 
@@ -49,7 +58,14 @@ export function FrontmatterEditor({
     const handleTagKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            addTag();
+            if (showSuggestions && filteredTags.length > 0) {
+                // 候補がある場合は一番上を追加（簡易対応）
+                addTag(filteredTags[0]);
+            } else {
+                addTag();
+            }
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false);
         }
     };
 
@@ -183,18 +199,38 @@ export function FrontmatterEditor({
                                 </span>
                             ))}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 relative">
                             <input
                                 type="text"
                                 value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
+                                onChange={(e) => {
+                                    setTagInput(e.target.value);
+                                    setShowSuggestions(true);
+                                }}
+                                onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                 onKeyDown={handleTagKeyDown}
                                 placeholder="タグを入力してEnter"
                                 className="flex-1"
                             />
+                            {showSuggestions && tagInput && filteredTags.length > 0 && (
+                                <ul className="tag-suggestions">
+                                    {filteredTags.map(tag => (
+                                        <li
+                                            key={tag}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault(); // onBlurを防ぐ
+                                                addTag(tag);
+                                            }}
+                                        >
+                                            {tag}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                             <button
                                 type="button"
-                                onClick={addTag}
+                                onClick={() => addTag()}
                                 className="px-3 py-1 rounded text-sm"
                                 style={{
                                     backgroundColor: 'var(--accent)',
