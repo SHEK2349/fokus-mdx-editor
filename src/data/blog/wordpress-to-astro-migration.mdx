@@ -1,0 +1,317 @@
+---
+title: 個人ブログをWordPress→Astroに移行。手順と技術スタックについて
+pubDatetime: 2025-12-23T08:00:00Z
+description: WordPressで運営していた個人ブログをAstroに移行しました。移行の手順、技術スタック、パフォーマンス比較、そして苦労したポイントを詳しく解説します。
+modDatetime: 2025-12-22T15:00:00Z
+featured: true
+draft: false
+author: SHEK
+tags:
+- astro
+- wordpress
+- migration
+- cloudflare
+- performance
+- web-development
+- 個人開発
+- blog
+dek: PageSpeedスコア98→100、LCP 0.9秒→0.5秒を実現した移行プロジェクトの全記録。
+hideEditPost: true
+timezone: Asia/Tokyo
+---
+
+## はじめに
+
+約8年間、WordPressで運営していた個人ブログ「Sheklog」を、静的サイトジェネレーター「Astro」に移行した。
+
+本記事では、移行の動機から具体的な手順、パフォーマンス比較、そして苦労したポイントまでを詳しく解説。**ソースコードはGitHubで公開**しているので、同様の移行を検討している方の参考になれば幸いだ。
+
+---
+
+## なぜWordPressから移行したのか
+
+### WordPressの課題
+
+ワードプレスは優れたCMSだが、多くの課題も抱えている。
+
+| 課題 | 詳細 |
+|:--|:--|
+| **パフォーマンス** | プラグインの肥大化でPageSpeedスコアが伸び悩む |
+| **セキュリティ** | 定期的なアップデート対応が必要 |
+| **運用コスト** | サーバー費用が月額数千円かかる |
+| **執筆体験** | ブロックエディタよりMarkdownで書きたい |
+
+特に、**運用コスト**の増大と**セキュリティ観点**での懸念事項が多い。
+多機能だが、個人用途では**明らかにオーバースペック**であり、もう少しシンプルで管理しやすいサービスへの移行を検討していた。
+
+### Astroを選んだ理由
+
+数あるWebフレームワークの中から「Astro」を選んだ理由は下記の通り。
+
+1. **SSG（静的サイト生成）** で高速配信
+2. **Content Collections** によるMDX記事管理
+3. **Cloudflare Pages + R2** との相性が良い
+4. **AstroPaper** という優れたブログテーマがある
+
+ワードプレスで特に致命的だったパフォーマンスや運用コストの問題が解消できた。ある程度自身で環境を構築する必要はあるものの、機能は最低限であるため、学習コストは低め。
+
+人気のフレームワークであり、学習教材も多いため、生成AIを活用を前提とした場合に得られるメリットも大きい。
+
+
+---
+
+## 技術スタック
+
+実際に選んだ構成は下記の通り。最新の技術にこだわらず、**「必要最低限」「シンプルな機能」**を目指した。
+
+| カテゴリ | 技術 | 選定理由 |
+|:--|:--|:--|
+| **フレームワーク** | Astro v5.x | SSG + MDX対応。公式Docがわかりやすい |
+| **テーマ** | AstroPaper | シンプル・カスタマイズ性が高い |
+| **スタイリング** | TailwindCSS | テーマに同梱 |
+| **画像ホスティング** | Cloudflare R2 | 低コスト・グローバルCDN |
+| **デプロイ** | Cloudflare Pages | 無料枠・高速デプロイ。**商用利用可能** |
+| **言語** | TypeScript | 型安全 |
+
+結果的に、必要最低限の機能は盛り込みつつ、移行前からパフォーマンスを大幅に向上させることができた。
+
+---
+
+## 移行前後のパフォーマンス比較
+
+### Lighthouseスコア（デスクトップ）
+
+| 指標 | 移行前 (WordPress) | 移行後 (Astro) | 変化 |
+|:--|:--:|:--:|:--:|
+| **Performance** | 98 | **100** | +2 |
+| **Accessibility** | 93 | **100** | +7 |
+| **Best Practices** | 100 | 100 | ±0 |
+| **SEO** | 100 | 92* | -8 |
+
+> *SEOスコアの低下はCloudflareが自動挿入する`Content-signal`ディレクティブ（AIクローラー制御用）が原因。実際のSEOには影響しない。
+
+### Core Web Vitals
+
+| 指標 | 移行前 | 移行後 | 改善率 |
+|:--|:--:|:--:|:--:|
+| **FCP** (First Contentful Paint) | 0.7秒 | 0.3秒 | **57%高速化** |
+| **LCP** (Largest Contentful Paint) | 0.9秒 | 0.5秒 | **44%高速化** |
+| **TBT** (Total Blocking Time) | 80ms | 0ms | **100%改善** |
+| **CLS** (Cumulative Layout Shift) | 0.002 | 0 | **完全解消** |
+| **Speed Index** | 1.2秒 | 0.6秒 | **50%高速化** |
+
+---
+
+## 移行の全体フロー
+
+移行の全体フローは以下の通り。
+
+今回、新規構築ではなく移行であるため、作業を進める前に綿密な要件定義が必要だった。
+
+特に、**画像サイズの誇大化**、**ファイル名・タグの曖昧な命名基準**など、長年の運用で崩壊した部分の確認。
+
+作業の出戻りが発生しないよう、現状の課題の洗い出しと解決方法の技術検証を実施しつつ、慎重に作業を行なった。
+
+```
+WordPress XML Export（記事・メディアのエクスポート）
+        ↓
+  MDX変換スクリプト (npm run wp:import)
+        ↓
+  フロントマターの正規化・タグの英語化
+        ↓
+  画像のR2アップロード + WebP変換
+        ↓
+  MDX内パスをR2 URLに置換
+        ↓
+  Cloudflare Pages デプロイ
+```
+
+---
+
+## Step-by-Step解説
+
+開発は下記の環境で行なった。
+
+| ツール名 | 用途 | 備考 |
+|:--|:--|:--|
+| Macbook Air | 開発、動作確認 | M4 / 16GB / 512GB |
+| Cursor | エディタ | Cursor Pro加入済 (Claude Opus 4.5, Composer 1) |
+| Antigravity | エディタ | Google One加入済 (Claude Opus 4.5, Gemini 3.0) |
+| Dev Container | CursorでDockerコンテナを作成する機能 | 作成したコンテナ上に環境を構築した |
+
+### Step 1: WordPressからエクスポート
+
+WordPress管理画面から記事データをXML形式でエクスポート。
+
+1. **ダッシュボード** → **ツール** → **エクスポート**
+2. 「すべてのコンテンツ」を選択
+3. XMLファイルをダウンロード
+
+既存記事を全文エクスポート後、下記の条件で記事の選定を行なった。
+
+- アクセス数が基準値を下回っていないこと（作業工数削減）
+- PRや案件記事でないこと（URLが変更になるため）
+
+
+
+### Step 2: Astroプロジェクトのセットアップ
+
+```bash
+# Astroプロジェクトを作成
+npm create astro@latest
+
+# AstroPaperテーマを使用する場合
+git clone https://github.com/satnaing/astro-paper.git my-blog
+cd my-blog
+npm install
+```
+
+### Step 3: 記事のMDX変換
+
+WordPress XMLをMDXファイルに変換するスクリプトを作成した。
+
+```bash
+# XMLからMDXを生成
+npm run wp:import -- path/to/export.xml
+```
+
+このスクリプトは以下の処理を行う：
+
+- 記事タイトル・本文・日付の抽出
+- HTMLからMarkdownへの変換
+- フロントマターの生成
+
+詳細なスクリプト群はリポジトリの [README.md](https://github.com/SHEK2349/wp-to-astro-sheklog-02#wordpress%E7%A7%BB%E8%A1%8C%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88) を参照。
+
+### Step 4: 画像のR2移行
+
+画像をCloudflare R2にアップロードし、WebP形式に変換する。
+
+```bash
+# 画像をWebPに変換してR2にアップロード
+npm run wp:upload-images
+
+# MDX内の画像パスをR2 URLに置換
+npm run wp:convert-image-urls
+```
+
+**なぜR2を選んだか？**
+
+- **コスト**: 10GB/月まで無料、それ以降も$0.015/GB
+- **速度**: Cloudflare CDNで世界中から高速配信
+- **連携**: Cloudflare Pagesとの親和性が高い
+
+### Step 5: デプロイ
+
+Cloudflare PagesにGitHubリポジトリを連携してデプロイ。
+
+1. Cloudflare Dashboard → **Workers & Pages**
+2. **Create** → **Pages** → **Connect to Git**
+3. リポジトリを選択
+4. ビルドコマンドを設定
+
+```
+Build command: npm run build
+Build output directory: dist
+```
+
+---
+
+## 苦労したポイント
+
+### 1. Cloudflare Pagesの25MB制限
+
+Cloudflare Pagesにはビルド成果物のファイルサイズに25MBの制限がある。画像を含めるとすぐに超過してしまうため、**ビルド後に画像を削除するスクリプト**を作成した。
+
+```typescript
+// astro.config.ts での設定例
+export default defineConfig({
+  integrations: [
+    r2ImageUploader(), // 画像をR2にアップロード後、distから削除
+  ],
+});
+```
+
+### 2. タグが数値になる問題
+
+WordPress XMLからインポートしたタグが、YAMLパース時に数値として解釈されるケースがあった。
+
+```yaml
+# NG: 数値として解釈される
+tags:
+  - 2024
+  - 100
+
+# OK: 文字列として明示
+tags:
+  - "2024"
+  - "100"
+```
+
+これを修正するスクリプト（`npm run wp:fix-tags`）を作成して一括で対応。
+
+### 3. 日付フォーマットの不一致
+
+WordPressとAstroで日付フォーマットが異なるため、ISO 8601形式に統一するスクリプトを作成。
+
+### 4. 画像数が多すぎてGit pushが失敗
+
+画像ファイルが多すぎてGitHubへのpushがタイムアウトした。解決策として：
+
+1. 画像をR2に外出し
+2. `.gitignore`で`src/assets/images/`を除外
+3. リポジトリを軽量化
+
+---
+
+## 今後の運用
+
+### 新規記事の作成
+
+`src/data/blog/_template.md`をコピーして記事を作成する。
+
+```yaml
+---
+title: "記事タイトル"
+pubDatetime: 2025-01-01T00:00:00+09:00
+author: "著者名"
+tags:
+  - "review"
+description: "SEO用の説明文"
+dek: "記事のリード文"
+---
+
+記事本文...
+```
+
+### 更新日時の自動管理
+
+`modDatetime`はGitのコミット日時から自動更新されるスクリプトを用意している。
+
+```bash
+npm run wp:update-dates-git
+```
+
+---
+
+## 参考文献
+
+| タイトル | URL |
+|:--|:--|
+| Astroでシンプルなサイトを作る | [slimalized.dev](https://slimalized.dev/posts/build-astro-site) |
+| Astroでビルド時にレスポンシブ画像を生成しつつ、Cloudflare R2に置くようにする | [Qiita](https://qiita.com/Minetake/items/f435b34e900952af9ebe) |
+| wordpress-export-to-markdown | [GitHub](https://github.com/lonekorean/wordpress-export-to-markdown) |
+| AstroPaper公式テーマ | [GitHub](https://github.com/satnaing/astro-paper) |
+| Astro公式ドキュメント | [astro.build](https://docs.astro.build/) |
+
+---
+
+## おわりに
+
+WordPressからAstroへの移行は、想像以上に手間がかかったが、その分得られたメリットは大きい。
+
+- **パフォーマンス100点**を達成
+- **運用コスト0円**（Cloudflare無料枠）
+- **Markdownで快適に執筆**
+
+同様の移行を検討している方は、ぜひ参考にしてほしい。質問やフィードバックがあればお気軽にどうぞ！
