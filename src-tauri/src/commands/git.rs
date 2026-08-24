@@ -2,6 +2,7 @@
 use crate::commands::settings::get_settings;
 use git2::{Repository, StatusOptions, Signature};
 use serde::{Deserialize, Serialize};
+use tauri::Emitter;
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -95,10 +96,73 @@ pub struct CommitRequest {
     pub message: String,
 }
 
+#[derive(Debug, Serialize, Clone)]
+struct CommitProgress {
+    step: u32,
+    total: u32,
+    message: String,
+}
+
 #[tauri::command]
-pub fn git_commit(request: CommitRequest) -> Result<String, String> {
+pub fn git_commit(app: tauri::AppHandle, request: CommitRequest) -> Result<String, String> {
     let repo = open_repo()?;
-    
+    let settings = get_settings()?;
+    let repo_path = &settings.repository_path;
+
+    let emit_progress = |step: u32, message: &str| {
+        let _ = app.emit("commit-progress", CommitProgress {
+            step,
+            total: 3,
+            message: message.to_string(),
+        });
+    };
+
+    // ── Step 1: src/assets/images/ に画像があればR2にアップロード ──
+    let images_dir = std::path::Path::new(repo_path).join("src/assets/images");
+    if images_dir.exists() {
+        emit_progress(1, "画像をR2にアップロード中...");
+        let upload_output = std::process::Command::new("/usr/local/bin/npm")
+            .current_dir(repo_path)
+            .env("PATH", "/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin")
+            .args(["run", "wp:upload-images"])
+            .output()
+            .map_err(|e| format!("Failed to run wp:upload-images: {}", e))?;
+
+        if !upload_output.status.success() {
+            let stderr = String::from_utf8_lossy(&upload_output.stderr);
+            let stdout = String::from_utf8_lossy(&upload_output.stdout);
+            // R2環境変数が未設定の場合はスキップ（エラーにしない）
+            if !stderr.contains("Missing R2 environment variables") 
+                && !stdout.contains("Missing R2 environment variables") {
+                return Err(format!("Image upload failed: {}\n{}", stdout, stderr));
+            }
+            emit_progress(1, "R2未設定のためスキップ");
+        } else {
+            emit_progress(1, "画像アップロード完了");
+
+            // ── Step 2: MDX内のローカルパスをR2 URLに変換 ──
+            emit_progress(2, "画像パスを変換中...");
+            let convert_output = std::process::Command::new("/usr/local/bin/npm")
+                .current_dir(repo_path)
+                .env("PATH", "/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin")
+                .args(["run", "wp:convert-image-paths"])
+                .output()
+                .map_err(|e| format!("Failed to run wp:convert-image-paths: {}", e))?;
+
+            if !convert_output.status.success() {
+                let stderr = String::from_utf8_lossy(&convert_output.stderr);
+                return Err(format!("Image path conversion failed: {}", stderr));
+            }
+            emit_progress(2, "画像パス変換完了");
+        }
+    } else {
+        emit_progress(1, "画像処理不要 - スキップ");
+        emit_progress(2, "画像パス変換不要 - スキップ");
+    }
+
+    // ── Step 3: git add & commit ──
+    emit_progress(3, "コミット中...");
+
     // Get index and add all changes
     let mut index = repo.index()
         .map_err(|e| format!("Failed to get index: {}", e))?;
@@ -144,12 +208,15 @@ pub fn git_commit(request: CommitRequest) -> Result<String, String> {
         &tree,
         &[&parent_commit],
     ).map_err(|e| format!("Failed to commit: {}", e))?;
+
+    emit_progress(3, "コミット完了");
     
     Ok(commit_id.to_string())
 }
 
+
 #[tauri::command]
-pub fn git_push() -> Result<(), String> {
+pub fn git_push(app: tauri::AppHandle) -> Result<(), String> {
     let repo = open_repo()?;
     
     let remote = repo.find_remote("origin")
@@ -158,21 +225,55 @@ pub fn git_push() -> Result<(), String> {
     // Get current branch
     let head = repo.head()
         .map_err(|e| format!("Failed to get HEAD: {}", e))?;
-    let branch_name = head.shorthand().unwrap_or("main");
+    let branch_name = head.shorthand().unwrap_or("main").to_string();
     
-    // Push using git command (git2 push requires complex auth setup)
     let settings = get_settings()?;
-    let output = std::process::Command::new("git")
+
+    let emit_progress = |step: u32, message: &str| {
+        let _ = app.emit("push-progress", CommitProgress {
+            step,
+            total: 3,
+            message: message.to_string(),
+        });
+    };
+
+    // Step 1: プッシュ前にリモートの変更を取り込む
+    emit_progress(1, "リモート変更を取り込み中...");
+    let pull_output = std::process::Command::new("git")
         .current_dir(&settings.repository_path)
-        .args(["push", "origin", branch_name])
+        .args(["pull", "--rebase", "origin", &branch_name])
+        .output()
+        .map_err(|e| format!("Failed to run git pull: {}", e))?;
+    
+    if !pull_output.status.success() {
+        let stderr = String::from_utf8_lossy(&pull_output.stderr);
+        return Err(format!("Pull before push failed: {}\nPlease resolve conflicts manually.", stderr));
+    }
+    emit_progress(1, "リモート変更取り込み完了");
+
+    // Step 2: Push
+    emit_progress(2, "プッシュ中...");
+    let push_output = std::process::Command::new("git")
+        .current_dir(&settings.repository_path)
+        .args(["push", "origin", &branch_name])
         .output()
         .map_err(|e| format!("Failed to run git push: {}", e))?;
     
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    if !push_output.status.success() {
+        let stderr = String::from_utf8_lossy(&push_output.stderr);
         return Err(format!("Push failed: {}", stderr));
     }
+    emit_progress(2, "プッシュ完了");
     
+    // Step 3: プッシュ成功後、ローカルのMDXパスも変換（ベストエフォート）
+    emit_progress(3, "画像パスを変換中...");
+    let _ = std::process::Command::new("/usr/local/bin/npm")
+        .current_dir(&settings.repository_path)
+        .env("PATH", "/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin")
+        .args(["run", "wp:convert-image-paths"])
+        .output();
+    emit_progress(3, "完了");
+
     // We need to use the remote variable or Rust will warn about unused
     drop(remote);
     

@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import type { GitStatus } from '../../types';
 
 interface GitPanelProps {
@@ -19,6 +20,30 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
     const [isCommitting, setIsCommitting] = useState(false);
     const [isPushing, setIsPushing] = useState(false);
     const [showPanel, setShowPanel] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [progressStep, setProgressStep] = useState(0);
+    const [progressTotal, setProgressTotal] = useState(3);
+    const [progressMessage, setProgressMessage] = useState('');
+
+    // 進捗イベントを常時リッスン（コミット・プッシュ両方）
+    useEffect(() => {
+        const unlistenCommit = listen<{ step: number; total: number; message: string }>('commit-progress', (event) => {
+            setProgressStep(event.payload.step);
+            setProgressTotal(event.payload.total);
+            setProgressMessage(event.payload.message);
+        });
+
+        const unlistenPush = listen<{ step: number; total: number; message: string }>('push-progress', (event) => {
+            setProgressStep(event.payload.step);
+            setProgressTotal(event.payload.total);
+            setProgressMessage(event.payload.message);
+        });
+
+        return () => {
+            unlistenCommit.then(fn => fn());
+            unlistenPush.then(fn => fn());
+        };
+    }, []);
 
     // 変更があるかどうか
     const hasChanges = status ? !status.isClean : false;
@@ -62,27 +87,41 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
         if (!commitMessage.trim()) return;
 
         setIsCommitting(true);
+        setErrorMessage(null);
+        setProgressStep(0);
+        setProgressMessage('');
         try {
             await onCommit(commitMessage);
             setCommitMessage('');
             onRefresh();
         } catch (error) {
             console.error('Commit failed:', error);
+            setErrorMessage(`コミットに失敗しました: ${error}`);
+            onRefresh(); // エラー時もステータスを更新
         } finally {
             setIsCommitting(false);
+            setProgressStep(0);
+            setProgressMessage('');
         }
     };
 
     const handlePush = async () => {
         setIsPushing(true);
+        setErrorMessage(null);
+        setProgressStep(0);
+        setProgressMessage('');
         try {
             await onPush();
             onRefresh();
             setShowPanel(false); // プッシュ後にパネルを閉じる
         } catch (error) {
             console.error('Push failed:', error);
+            setErrorMessage(`プッシュに失敗しました: ${error}`);
+            onRefresh(); // エラー時もステータスを更新して isClean を再確認
         } finally {
             setIsPushing(false);
+            setProgressStep(0);
+            setProgressMessage('');
         }
     };
 
@@ -169,14 +208,31 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
                                         placeholder="コミットメッセージ..."
                                         rows={3}
                                         className="git-commit-input"
+                                        disabled={isCommitting}
                                     />
+
+                                    {/* Progress Bar */}
+                                    {isCommitting && progressStep > 0 && (
+                                        <div className="git-progress">
+                                            <div className="git-progress-bar">
+                                                <div
+                                                    className="git-progress-fill"
+                                                    style={{ width: `${(progressStep / progressTotal) * 100}%` }}
+                                                />
+                                            </div>
+                                            <div className="git-progress-text">
+                                                [{progressStep}/{progressTotal}] {progressMessage}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="git-actions">
                                         <button
                                             onClick={handleCommit}
                                             disabled={isCommitting || !commitMessage.trim()}
                                             className="btn-primary"
                                         >
-                                            {isCommitting ? 'コミット中...' : 'コミット'}
+                                            {isCommitting ? '処理中...' : 'コミット'}
                                         </button>
                                     </div>
                                 </div>
@@ -188,6 +244,32 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
                         )}
                     </div>
 
+                    {/* Error Message */}
+                    {errorMessage && (
+                        <div
+                            className="git-error-message"
+                            onClick={() => setErrorMessage(null)}
+                            title="クリックで閉じる"
+                        >
+                            <span>⚠ {errorMessage}</span>
+                        </div>
+                    )}
+
+                    {/* Push Progress Bar */}
+                    {isPushing && progressStep > 0 && (
+                        <div className="git-progress" style={{ marginBottom: '0.5rem' }}>
+                            <div className="git-progress-bar">
+                                <div
+                                    className="git-progress-fill"
+                                    style={{ width: `${(progressStep / progressTotal) * 100}%` }}
+                                />
+                            </div>
+                            <div className="git-progress-text">
+                                [{progressStep}/{progressTotal}] {progressMessage}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Push Button - Always visible at bottom */}
                     <div className="git-sticky-footer">
                         <button
@@ -196,7 +278,7 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
                             className="btn-secondary"
                             style={{ width: '100%' }}
                         >
-                            {isPushing ? 'プッシュ中...' : 'プッシュ'}
+                            {isPushing ? '処理中...' : 'プッシュ'}
                         </button>
                     </div>
                 </div>
