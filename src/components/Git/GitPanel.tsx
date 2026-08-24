@@ -127,6 +127,8 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
             onRefresh();
         } finally {
             setIsCommitting(false);
+            setProgressStep(0);
+            setProgressMessage('');
         }
     };
 
@@ -144,6 +146,8 @@ export function GitPanel({ status, onCommit, onPush, onRefresh }: GitPanelProps)
             onRefresh();
         } finally {
             setIsPushing(false);
+            setProgressStep(0);
+            setProgressMessage('');
         }
     };
 
