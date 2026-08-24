@@ -645,6 +645,76 @@ h3 {
   min-height: 0;
 }
 
+.git-operation-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  word-break: break-word;
+}
+
+.git-operation-message-error {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.git-operation-message-warning {
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.dark .git-operation-message-error {
+  color: #fca5a5;
+}
+
+.dark .git-operation-message-warning {
+  color: #fcd34d;
+}
+
+.git-progress {
+  margin-top: 0.5rem;
+}
+
+.git-progress-bar {
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.git-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.25s ease;
+}
+
+.git-progress-warning .git-progress-fill {
+  background: #d97706;
+}
+
+.git-progress-error .git-progress-fill {
+  background: #dc2626;
+}
+
+.git-progress-text {
+  margin-top: 0.25rem;
+  color: var(--foreground);
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
 .git-sticky-footer {
   flex-shrink: 0;
   margin-top: 0.5rem;
@@ -727,6 +797,11 @@ h3 {
 .git-commit-input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.git-commit-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .git-actions {
@@ -1885,6 +1960,7 @@ h3 {
     opacity: 0;
     transform: translateY(12px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -2088,7 +2164,8 @@ h3 {
   position: absolute;
   top: 100%;
   left: 0;
-  right: 60px; /* '追加' ボタンの幅分を避ける */
+  right: 60px;
+  /* '追加' ボタンの幅分を避ける */
   margin-top: 4px;
   background-color: var(--background);
   border: 1px solid var(--border);

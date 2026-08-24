@@ -50,7 +50,7 @@ pub struct SaveRepositoryRequest {
     pub articles_path: String,
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn save_repository_settings(request: SaveRepositoryRequest) -> Result<AppSettings, String> {
     let path = get_settings_path();
     

@@ -1,0 +1,199 @@
+---
+title: $69で買える最強のポケット電子書籍リーダー「Xteink X4」徹底解説③日本語導入手順
+pubDatetime: 2025-12-31T01:27:39.685Z
+description: 「Xteink X4」解説第3弾。EPUB形式とXTC形式それぞれで日本語の縦書き表示を実現する方法を詳しく解説する。
+featured: false
+draft: false
+author: SHEK
+tags:
+- review
+- xteink
+- xteink-x4
+- e-ink
+- e-book
+- reader
+- aliexpress
+- overseas
+- shopping
+dek: 「Xteink X4」解説第3弾。日本語の縦書き表示を実現する方法を解説
+hideEditPost: false
+timezone: Asia/Tokyo
+---
+
+## はじめに
+
+「Xteink X4」解説第3弾。日本語で本を読むためには、初期設定だけでは不十分で、いくつかの追加設定や対応が必要となる。縦書き・横書きの設定や、読む形式（EPUB形式・XTC形式）によっても対応方法が異なってくる。
+
+この記事では、**EPUB形式とXTC形式それぞれの日本語設定方法**を詳しく解説する。
+
+* * *
+
+前回の記事はこちら → [Xteink X4 OSアップデート完全ガイド](/posts/xteink-x4-02/)
+
+## EPUB形式とXTC形式の比較
+
+日本語対応を行う前に、2つの形式の特徴を理解しておこう。
+
+### EPUB形式のメリット・デメリット
+
+**メリット:**
+- 軽量で表示が速い
+- 読むまでの手間が少ない
+
+**デメリット:**
+- 挿絵や表紙の表示に制限がある
+
+### XTC形式のメリット・デメリット
+
+**メリット:**
+- 挿絵と表紙の表示が可能
+- ビジュアルが多い本に適している
+
+**デメリット:**
+- EPUBからの変換作業が必要
+- 現時点では日本語の縦書き表示ができない（横書きのみ）
+
+**結論として、簡単に日本語対応するならEPUB形式がおすすめ**。フォントさえ用意できれば、手軽に始められる。XTC形式は挿絵が多い本を読む場合に検討するとよいだろう。
+
+## EPUB形式での日本語縦書き設定
+
+EPUB形式で日本語の縦書きを実現する方法を解説する。
+
+### ステップ1: フォントファイルの準備
+
+まず、TTF形式のフォントファイルを用意する必要がある。
+
+- 使いたいフォントがあればそのまま使用可能
+- TTF形式でない場合は、変換サイトを利用して変換する
+
+フォントは無料のものをWebからダウンロードしてくれば良い。僕は「**Noto_Sans_JP**」を使用している。
+
+https://fonts.google.com/noto/specimen/Noto+Sans+JP
+
+
+フォント変換は、「○○ to ttf」などのワードで検索するとWeb上で変換できるサービスが複数見つかるので、そちらを活用するとよい。
+
+### ステップ2: フォントの最適化（推奨）
+
+「**Xteink X4**」の画面サイズに最適化されたフォントを作成するには、コミュニティ有志が作成した「**XTEink Web Font Maker**」を使用する。
+
+「**XTEink Web Font Maker**」は、TTF/OTFフォントをX4タブレットと互換性のある.bin形式に変換できるオンラインツール。
+
+https://xteink.lakafior.com
+
+このツールで画面サイズや好みのフォントを設定し、最適化されたフォントファイルを作成できる。preview textの欄に日本語を入力すれば、日本語表示の確認も可能。
+
+![](https://pub-0775e09aef814c42bd2da63d4c64076a.r2.dev/images/xteink-x4-03/xteink-x4-03_007_result.webp)
+
+
+### ステップ3: フォントのインストール
+
+1. 作成した.bin形式のフォントファイルを本体のフォントフォルダに格納する（PCからXteink X4本体に転送）
+2. 本体設定を開く
+3. フォントフォルダから格納したフォントを選択
+4. フォントを適用
+
+これで日本語対応のフォントが適用され、日本語表示が正しくできるようになる。
+
+### ステップ4: 縦書き設定
+
+1. EPUB形式の本を開く
+2. 本の中からメニューを開く
+3. 「書体設定」を選択
+4. 「読み方向」を開く
+5. 「縦読み」を選択
+
+これで日本語が縦書きで表示される。
+
+> **注意**: EPUB形式では挿絵の表示に対応していない。挿絵が必要な場合はXTC形式を使用すること。
+
+## XTC形式での日本語対応
+
+XTC形式での日本語対応方法を解説する。XTC形式はより複雑な変換作業が必要だが、挿絵や表紙の表示が可能。
+
+挿絵や図表が多い本を読む場合に選択すると良い。
+
+### 前提条件
+
+- 日本語で読めるEPUB形式のファイルが必要
+- EPUBファイルを専用ツールでXTC形式に変換する
+
+### 変換ツールの選択
+
+コミュニティには有志によって作成された複数の変換ツールが公開されている。
+
+**デスクトップ版:**
+
+https://www.readme.club/resources/b2c83171-615b-43a5-97d2-ff3023f3a8d8
+
+https://www.readme.club/resources/43f43b5c-9817-4a01-96af-d28f2ceb3216
+
+ここでは、Web上で使える**EPUB2XTC**を使った変換方法を説明する。
+
+### 変換手順
+
+1. **EPUBファイルのアップロード**: 左の「Upload EPUB」から、対象のEPUBファイルをアップロードする
+
+![](https://pub-0775e09aef814c42bd2da63d4c64076a.r2.dev/images/xteink-x4-03/xteink-x4-03_002_result.webp)
+
+2. **フォントの設定**: 「Font Source」で「Custom」を選択し、使用したいフォントファイル（ZIP形式）をアップロードする
+3. **プレビュー確認**: 日本語が正しく表示されることを確認する（文字化けしていないか確認）
+
+![](https://pub-0775e09aef814c42bd2da63d4c64076a.r2.dev/images/xteink-x4-03/xteink-x4-03_003_result.webp)
+
+4. **設定の調整**: 文字サイズ、上下左右のマージンなど、各種設定を調整する
+
+![](https://pub-0775e09aef814c42bd2da63d4c64076a.r2.dev/images/xteink-x4-03/xteink-x4-03_005_result.webp)
+
+5. **ダウンロード**: 変換後のXTCファイルをダウンロードする
+
+![](https://pub-0775e09aef814c42bd2da63d4c64076a.r2.dev/images/xteink-x4-03/xteink-x4-03_006_result.webp)
+
+6. **本体へ転送**: XTCファイルをXteink本体に転送して開く
+
+> **注意**: 現時点では、XTC形式での日本語縦書きに対応できていない（多分）。横書きでの表示となる。
+
+### ルビ表示について
+
+現在紹介している「**EPUB2XTC**」では、日本語のルビ表示に未対応。「**EPUB to XTC Converter**」を使えば、ルビの表示はもちろん、より詳細に表示形式を調整することができる。
+
+![](https://pub-0775e09aef814c42bd2da63d4c64076a.r2.dev/images/xteink-x4-03/xteink-x4-03_008_result.webp)
+
+https://x4converter.rho.sh/
+
+機能が多い分設定に悩むが、個人的には下記の内容を押さえておけばOK。（下記以外は全てデフォルト設定）
+
+#### TEXT SETTINGS
+- **Word Spacing**：Condensed
+- **Hyphenation Language**：Auto(ja-JP)
+- **Custom Font**：使用
+- **Font Size**：22px
+
+#### IMAGE SETTINGS
+- **Quality Mode**：High Quality
+
+## 参考リンク
+
+> ReadMe.club Community-driven resource sharing for Xteink users 
+> https://www.readme.club
+>
+> XTEink Web Font Maker 
+> https://xteink.lakafior.com
+>
+> EPUB2XTC 
+> https://www.readme.club/resources/43f43b5c-9817-4a01-96af-d28f2ceb3216
+>
+> EPUB to XTC Converter 
+> https://x4converter.rho.sh/
+>
+> cr2xt: desktop XTC converter 
+> https://www.readme.club/resources/b2c83171-615b-43a5-97d2-ff3023f3a8d8
+
+## まとめ
+
+「Xteink X4」で日本語の本を快適に読むためには、形式に応じた設定が必要である。
+
+- **手軽に始めるならEPUB形式**: フォント導入と縦書き設定で、すぐに日本語の縦書き読書が楽しめる
+- **挿絵を楽しみたいならXTC形式**: 変換作業が必要だが、ビジュアル面で優れている（ただし現時点では横書きのみ）
+
+どちらの形式も一長一短があるため、読みたい本の内容に応じて使い分けるとよいだろう。

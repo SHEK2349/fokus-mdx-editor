@@ -17,7 +17,7 @@ interface SidebarProps {
     onDeleteArticle: (slug: string) => void;
     loading?: boolean;
     gitStatus: GitStatus | null;
-    onCommit: (message: string) => Promise<void>;
+    onCommit: (message: string, files: string[]) => Promise<void>;
     onPush: () => Promise<void>;
     onGitRefresh: () => void;
 }

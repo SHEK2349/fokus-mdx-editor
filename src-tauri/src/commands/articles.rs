@@ -76,7 +76,10 @@ fn parse_frontmatter(content: &str) -> Result<(ArticleFrontmatter, String), Stri
     let frontmatter: ArticleFrontmatter = result.data
         .ok_or("No frontmatter found")?
         .deserialize()
-        .map_err(|e| format!("Failed to parse frontmatter: {}", e))?;
+        .map_err(|e| {
+            println!("Frontmatter deserialize error: {:?}", e);
+            format!("Failed to parse frontmatter: {}", e)
+        })?;
     
     Ok((frontmatter, result.content))
 }
@@ -89,35 +92,58 @@ fn serialize_frontmatter(frontmatter: &ArticleFrontmatter, content: &str) -> Str
 #[tauri::command]
 pub fn list_articles() -> Result<Vec<ArticleListItem>, String> {
     let articles_dir = get_articles_dir()?;
+    println!("list_articles called. Looking in: {:?}", articles_dir);
     
     if !articles_dir.exists() {
+        println!("Directory does not exist!");
         return Ok(vec![]);
     }
     
     let mut articles = Vec::new();
     
     for entry in WalkDir::new(&articles_dir).max_depth(1) {
-        let entry = entry.map_err(|e| e.to_string())?;
+        let entry = match entry {
+            Ok(e) => e,
+            Err(e) => {
+                println!("WalkDir error: {}", e);
+                continue;
+            }
+        };
         let path = entry.path();
         
-        if path.extension().map_or(false, |ext| ext == "mdx") {
+        if !path.is_file() {
+            continue;
+        }
+        
+        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+        if ext == "mdx" || ext == "md" {
             let slug = path.file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("")
                 .to_string();
             
-            let content = fs::read_to_string(path)
-                .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+            let content = match fs::read_to_string(path) {
+                Ok(c) => c,
+                Err(e) => {
+                    println!("Failed to read {}: {}", path.display(), e);
+                    continue;
+                }
+            };
             
-            if let Ok((fm, _)) = parse_frontmatter(&content) {
-                articles.push(ArticleListItem {
-                    slug,
-                    title: fm.title,
-                    pub_datetime: fm.pub_datetime,
-                    draft: fm.draft,
-                    featured: fm.featured,
-                    tags: fm.tags,
-                });
+            match parse_frontmatter(&content) {
+                Ok((fm, _)) => {
+                    articles.push(ArticleListItem {
+                        slug,
+                        title: fm.title,
+                        pub_datetime: fm.pub_datetime,
+                        draft: fm.draft,
+                        featured: fm.featured,
+                        tags: fm.tags,
+                    });
+                }
+                Err(e) => {
+                    println!("Failed to parse {}: {}", path.display(), e);
+                }
             }
         }
     }
@@ -125,6 +151,7 @@ pub fn list_articles() -> Result<Vec<ArticleListItem>, String> {
     // Sort by pub_datetime descending
     articles.sort_by(|a, b| b.pub_datetime.cmp(&a.pub_datetime));
     
+    println!("Found {} articles.", articles.len());
     Ok(articles)
 }
 
@@ -249,3 +276,42 @@ pub fn delete_article(slug: String) -> Result<(), String> {
     
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_frontmatter() {
+        let content = r#"---
+title: "【レビュー】防水仕様&4G対応な電子書籍入門機。第10世代「Kindle Paperwhite 2018」 を購入。"
+pubDatetime: 2018-11-25T13:47:50.000Z
+modDatetime: 2019-04-27T03:10:45.000Z
+featured: false
+draft: false
+author: "SHEK"
+tags:
+  - "review"
+  - "amazon"
+description: "前記事で紹介したとおり、現在イタリアとスイスを巡る旅行の途中。..."
+dek: "長距離移動とマッチする長寿命バッテリー。"
+hideEditPost: true
+timezone: Asia/Tokyo
+---
+Content goes here
+"#;
+        let res = parse_frontmatter(content);
+        println!("Test Result: {:?}", res);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_list_articles() {
+        let articles = list_articles();
+        println!("Articles: {:?}", articles);
+        if let Ok(list) = articles {
+            println!("Count: {}", list.len());
+        }
+    }
+}
+

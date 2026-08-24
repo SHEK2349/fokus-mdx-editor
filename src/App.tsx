@@ -61,6 +61,7 @@ function App() {
   const fetchArticles = useCallback(async () => {
     try {
       const data = await invoke<ArticleListItem[]>('list_articles');
+      console.log('Fetched articles from backend:', data);
       setArticles(data);
     } catch (error) {
       console.error('Failed to fetch articles:', error);
@@ -72,27 +73,28 @@ function App() {
   // 設定を取得
   const fetchSettings = useCallback(async () => {
     try {
-      // まずlocalStorageから設定を読み込み
-      const saved = localStorage.getItem('fokus-settings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.repositoryPath && parsed.articlesPath) {
-          // Rustバックエンドに設定を送信
-          await invoke('save_repository_settings', {
-            request: {
-              repository_path: parsed.repositoryPath,
-              articles_path: parsed.articlesPath,
-            }
-          });
-          setRepositoryPath(parsed.repositoryPath);
-          return;
-        }
-      }
-
-      // localStorageに設定がない場合はRustバックエンドから取得
+      // Rustバックエンドから設定を読み込む（書き込みは行わない）
       const data = await invoke<{ repository_path: string; articles_path: string; is_configured: boolean }>('get_settings');
-      setRepositoryPath(data.repository_path || '');
-      if (!data.is_configured) {
+      if (data.is_configured && data.repository_path) {
+        setRepositoryPath(data.repository_path);
+        // localStorageも同期しておく
+        localStorage.setItem('fokus-settings', JSON.stringify({
+          repositoryPath: data.repository_path,
+          articlesPath: data.articles_path,
+        }));
+      } else {
+        // 未設定の場合はlocalStorageをフォールバックとして参照
+        const saved = localStorage.getItem('fokus-settings');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.repositoryPath) {
+              setRepositoryPath(parsed.repositoryPath);
+            }
+          } catch {
+            // localStorageが壊れている場合は無視
+          }
+        }
         setShowSettings(true);
       }
     } catch (error) {
@@ -248,31 +250,28 @@ function App() {
   }, [hasUnsavedChanges]);
 
   // Git コミット
-  const handleCommit = useCallback(async (message?: string) => {
-    const commitMessage = message || prompt('コミットメッセージを入力:');
-    if (!commitMessage) return;
-
+  const handleCommit = useCallback(async (message: string, files: string[]) => {
     try {
-      await invoke('git_commit', { request: { message: commitMessage } });
+      await invoke('git_commit', { request: { message, files } });
       addToast('コミットしました', 'success');
-      fetchGitStatus();
     } catch (error) {
       console.error('Failed to commit:', error);
       addToast(`コミットに失敗しました: ${error}`, 'error');
+      throw error;
     }
-  }, [fetchGitStatus]);
+  }, [addToast]);
 
   // Git プッシュ
   const handlePush = useCallback(async () => {
     try {
       await invoke('git_push');
       addToast('プッシュしました', 'success');
-      fetchGitStatus();
     } catch (error) {
       console.error('Failed to push:', error);
       addToast(`プッシュに失敗しました: ${error}`, 'error');
+      throw error;
     }
-  }, [fetchGitStatus, addToast]);
+  }, [addToast]);
 
   // Welcome & Tutorial State
   const [showWelcome, setShowWelcome] = useState(false);
