@@ -7,47 +7,104 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 interface PreviewProps {
     content: string;
     className?: string;
     repositoryPath?: string;
+    articleFilePath?: string;
 }
 
-// ローカル画像パスをファイルURLに変換
-const resolveImagePath = (src: string | undefined, repositoryPath: string | undefined): string => {
-    if (!src) return '';
+const URL_SCHEME_PATTERN = /^[a-z][a-z\d+.-]*:/i;
+const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[a-z]:[\\/]/i;
 
-    // ローカルパス (src/assets/images/...) をファイルURLに変換
-    // ローカルパス (src/assets/images/...) をファイルURLに変換
-    if (src.startsWith('src/assets/images/') && repositoryPath) {
-        // Markdownパーサーによってエンコードされている可能性があるためデコードする
-        const decodedSrc = decodeURIComponent(src);
-        const fullPath = `${repositoryPath}/${decodedSrc}`;
-
-        // convertFileSrcの代わりに手動でhttp://asset.localhost形式に変換
-        // macOS/WebKitでの互換性のため
-        const isWindows = navigator.userAgent.includes('Windows');
-        let resolved = '';
-
-        if (isWindows) {
-            resolved = `http://asset.localhost/${encodeURIComponent(fullPath)}`;
-        } else {
-            // macOS/Linux
-            resolved = `http://asset.localhost/${encodeURIComponent(fullPath)}`;
-        }
-
-        console.log('[Preview Image]', { src, decodedSrc, repositoryPath, fullPath, resolved });
-        return resolved;
+const decodeImagePath = (src: string): string => {
+    try {
+        return decodeURIComponent(src);
+    } catch {
+        return src;
     }
-
-    console.log('[Preview Image] Not resolved:', { src, repositoryPath });
-    // R2 URLやhttp(s)はそのまま
-    return src;
 };
 
-export function Preview({ content, className = '', repositoryPath }: PreviewProps) {
+const normalizeFilePath = (path: string): string => {
+    const slashPath = path.replace(/\\/g, '/');
+    const drive = slashPath.match(/^[a-z]:/i)?.[0] ?? '';
+    const isAbsolute = slashPath.startsWith('/') || Boolean(drive);
+    const body = drive ? slashPath.slice(drive.length) : slashPath;
+    const parts: string[] = [];
+
+    for (const part of body.split('/')) {
+        if (!part || part === '.') continue;
+        if (part === '..') {
+            if (parts.length > 0 && parts[parts.length - 1] !== '..') {
+                parts.pop();
+            } else if (!isAbsolute) {
+                parts.push(part);
+            }
+            continue;
+        }
+        parts.push(part);
+    }
+
+    const prefix = drive ? `${drive}/` : isAbsolute ? '/' : '';
+    return `${prefix}${parts.join('/')}`;
+};
+
+const directoryName = (path: string): string => {
+    const normalized = normalizeFilePath(path);
+    const separatorIndex = normalized.lastIndexOf('/');
+    return separatorIndex >= 0 ? normalized.slice(0, separatorIndex) : normalized;
+};
+
+const joinFilePath = (basePath: string, relativePath: string): string =>
+    normalizeFilePath(`${basePath}/${relativePath}`);
+
+// Markdownの画像参照をWebViewで読み込めるURLへ変換する。
+export const resolveImagePath = (
+    src: string | undefined,
+    repositoryPath: string | undefined,
+    articleFilePath?: string,
+): string => {
+    if (!src) return '';
+
+    const trimmedSrc = src.trim();
+
+    // HTTPS/R2、data URL、既に変換済みのasset URLはそのまま使う。
+    if (
+        (!WINDOWS_ABSOLUTE_PATH_PATTERN.test(trimmedSrc) && URL_SCHEME_PATTERN.test(trimmedSrc))
+        || trimmedSrc.startsWith('//')
+    ) {
+        return trimmedSrc;
+    }
+
+    if (!repositoryPath) return src;
+
+    const decodedSrc = decodeImagePath(trimmedSrc);
+    const normalizedSrc = decodedSrc.replace(/\\/g, '/');
+    const repositoryRelativePath = normalizedSrc.replace(/^\/+/, '');
+    let fullPath: string | null = null;
+
+    if (repositoryRelativePath.startsWith('src/assets/images/')) {
+        fullPath = joinFilePath(repositoryPath, repositoryRelativePath);
+    } else if (normalizedSrc.startsWith('./') || normalizedSrc.startsWith('../')) {
+        const basePath = articleFilePath
+            ? directoryName(articleFilePath)
+            : repositoryPath;
+        fullPath = joinFilePath(basePath, normalizedSrc);
+    } else if (normalizedSrc.startsWith('/') || WINDOWS_ABSOLUTE_PATH_PATTERN.test(normalizedSrc)) {
+        fullPath = normalizeFilePath(normalizedSrc);
+    }
+
+    return fullPath ? convertFileSrc(fullPath) : src;
+};
+
+export function Preview({
+    content,
+    className = '',
+    repositoryPath,
+    articleFilePath,
+}: PreviewProps) {
     return (
         <div className={`preview-panel ${className}`}>
             <div className="preview-content prose">
@@ -87,7 +144,7 @@ export function Preview({ content, className = '', repositoryPath }: PreviewProp
                         ),
                         img: ({ src, alt }: { src?: string; alt?: string }) => (
                             <img
-                                src={resolveImagePath(src, repositoryPath)}
+                                src={resolveImagePath(src, repositoryPath, articleFilePath)}
                                 alt={alt}
                                 className="preview-img"
                                 loading="lazy"

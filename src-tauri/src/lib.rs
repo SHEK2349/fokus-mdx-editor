@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, SubmenuBuilder};
+use tauri::Manager;
 
 mod commands;
 
@@ -16,6 +17,18 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            // 保存済みのリポジトリ配下だけをローカル画像プレビューに許可する。
+            if let Ok(settings) = get_settings() {
+                if settings.is_configured && !settings.repository_path.is_empty() {
+                    if let Err(error) = app
+                        .asset_protocol_scope()
+                        .allow_directory(&settings.repository_path, true)
+                    {
+                        eprintln!("Failed to allow repository assets: {error}");
+                    }
+                }
+            }
+
             // About metadata
             let about = AboutMetadataBuilder::new()
                 .name(Some("Fokus. Editor"))

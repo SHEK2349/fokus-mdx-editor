@@ -602,7 +602,11 @@ function App() {
               </div>
               {showPreview && (
                 <div className="preview-pane">
-                  <Preview content={content} repositoryPath={repositoryPath} />
+                  <Preview
+                    content={content}
+                    repositoryPath={repositoryPath}
+                    articleFilePath={currentArticle.filepath}
+                  />
                 </div>
               )}
             </div>

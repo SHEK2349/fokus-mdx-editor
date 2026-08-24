@@ -201,13 +201,6 @@ fn stage_target_changes(repo: &Repository, index: &mut git2::Index) -> Result<()
     Ok(())
 }
 
-#[derive(Debug, Serialize, Clone)]
-struct CommitProgress {
-    step: u32,
-    total: u32,
-    message: String,
-}
-
 #[tauri::command]
 pub async fn git_commit(app: tauri::AppHandle, request: CommitRequest) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || git_commit_blocking(&app, request))

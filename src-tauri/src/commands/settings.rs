@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppSettings {
@@ -51,7 +52,10 @@ pub struct SaveRepositoryRequest {
 }
 
 #[tauri::command(async)]
-pub fn save_repository_settings(request: SaveRepositoryRequest) -> Result<AppSettings, String> {
+pub fn save_repository_settings(
+    app: tauri::AppHandle,
+    request: SaveRepositoryRequest,
+) -> Result<AppSettings, String> {
     let path = get_settings_path();
     
     // Validate paths
@@ -64,6 +68,11 @@ pub fn save_repository_settings(request: SaveRepositoryRequest) -> Result<AppSet
     if !full_articles_path.exists() {
         return Err(format!("Articles path does not exist: {}", full_articles_path.display()));
     }
+
+    // 選択されたリポジトリだけをasset protocolの読み込み対象にする。
+    app.asset_protocol_scope()
+        .allow_directory(&repo_path, true)
+        .map_err(|e| format!("Failed to allow repository assets: {}", e))?;
     
     let settings = AppSettings {
         repository_path: request.repository_path,
