@@ -8,6 +8,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { LinkPreviewCard } from './LinkPreviewCard';
 
 interface PreviewProps {
     content: string;
@@ -59,6 +60,28 @@ const directoryName = (path: string): string => {
 
 const joinFilePath = (basePath: string, relativePath: string): string =>
     normalizeFilePath(`${basePath}/${relativePath}`);
+
+const getStandaloneLink = (children: React.ReactNode): { href: string; label?: string } | null => {
+    const meaningfulChildren = React.Children.toArray(children).filter(
+        (child) => typeof child !== 'string' || child.trim().length > 0,
+    );
+    if (meaningfulChildren.length !== 1 || !React.isValidElement(meaningfulChildren[0])) {
+        return null;
+    }
+
+    const child = meaningfulChildren[0] as React.ReactElement<{
+        href?: string;
+        children?: React.ReactNode;
+    }>;
+    const href = child.props.href;
+    if (!href || !/^https?:\/\//i.test(href)) return null;
+
+    const label = React.Children.toArray(child.props.children)
+        .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+        .join('')
+        .trim();
+    return { href, label: label || undefined };
+};
 
 // Markdownの画像参照をWebViewで読み込めるURLへ変換する。
 export const resolveImagePath = (
@@ -115,6 +138,14 @@ export function Preview({
                         h1: ({ children }: { children?: React.ReactNode }) => <h1 className="preview-h1">{children}</h1>,
                         h2: ({ children }: { children?: React.ReactNode }) => <h2 className="preview-h2">{children}</h2>,
                         h3: ({ children }: { children?: React.ReactNode }) => <h3 className="preview-h3">{children}</h3>,
+                        p: ({ children }: { children?: React.ReactNode }) => {
+                            const standaloneLink = getStandaloneLink(children);
+                            return standaloneLink ? (
+                                <LinkPreviewCard url={standaloneLink.href} label={standaloneLink.label} />
+                            ) : (
+                                <p>{children}</p>
+                            );
+                        },
                         a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
                             <a href={href} target="_blank" rel="noopener noreferrer" className="preview-link">
                                 {children}

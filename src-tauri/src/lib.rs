@@ -9,6 +9,7 @@ use commands::{
     list_articles, get_article, create_article, update_article, delete_article,
     get_git_status, git_commit, git_push,
     save_dropped_image,
+    fetch_link_preview,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -32,7 +33,7 @@ pub fn run() {
             // About metadata
             let about = AboutMetadataBuilder::new()
                 .name(Some("Fokus. Editor"))
-                .version(Some("0.1.0"))
+                .version(Some(env!("CARGO_PKG_VERSION")))
                 .authors(Some(vec!["SHEK".to_string()]))
                 .comments(Some("書くことに集中するための、ミニマルで美しいMDXエディタ"))
                 .copyright(Some("© 2025 SHEK"))
@@ -91,6 +92,7 @@ pub fn run() {
             git_commit,
             git_push,
             save_dropped_image,
+            fetch_link_preview,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

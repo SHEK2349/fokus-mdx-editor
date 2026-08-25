@@ -1,6 +1,6 @@
 [package]
 name = "fokus-editor"
-version = "0.1.1"
+version = "0.1.2"
 description = "A minimal and beautiful MDX editor"
 authors = ["SHEK"]
 edition = "2021"
@@ -29,4 +29,5 @@ walkdir = "2"
 dirs = "5"
 chrono = { version = "0.4", features = ["serde"] }
 serde_yaml = "0.9"
-
+regex = "1"
+reqwest = { version = "0.13", features = ["blocking"] }
